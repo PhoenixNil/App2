@@ -1,0 +1,358 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window x:Class="App2.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:App2"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="代理控制台">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Background="{ThemeResource LayerFillColorDefaultBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar"
+                  Title="代理控制台">
+            <TitleBar.IconSource>
+                <FontIconSource Glyph="&#xE705;" />
+            </TitleBar.IconSource>
+        </TitleBar>
+
+        <Grid Grid.Row="1"
+              Margin="16"
+              ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <!-- 左侧：使用比例，但限制最大宽度 -->
+                <ColumnDefinition Width="1.2*" MinWidth="380" MaxWidth="500" />
+                <!-- 右侧：使用比例，保证足够空间 -->
+                <ColumnDefinition Width="1.5*" MinWidth="400" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Server list and actions -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0"
+                            Orientation="Vertical">
+                    <TextBlock Text="服务器列表"
+                               FontSize="20"
+                               FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                Spacing="8"
+                                Margin="0,8,0,0">
+                        <DropDownButton x:Name="BtnAdd"
+                                        Content="添加"
+                                        Padding="12,6">
+                            <DropDownButton.Flyout>
+                                <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                    <MenuFlyoutItem Text="从SS链接导入"
+                                                    Click="BtnImportSS_Click"
+                                                    FontWeight="Normal">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE77F;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="手动添加新服务器"
+                                                    Click="BtnAddManual_Click"
+                                                    FontWeight="Normal">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE710;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </DropDownButton.Flyout>
+                        </DropDownButton>
+                        <Button x:Name="BtnEdit"
+                                Click="BtnEdit_Click"
+                                Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon Glyph="&#xE70F;"
+                                          Margin="0,0,5,0" />
+                                <TextBlock Text="编辑" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="BtnRemove"
+                                Click="BtnRemove_Click"
+                                Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon Glyph="&#xE74D;"
+                                          Margin="0,0,5,0" />
+                                <TextBlock Text="删除" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+                
+                <AutoSuggestBox Grid.Row="1"
+                                PlaceholderText="Search..."
+                                QueryIcon="Find"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,16,0,16"
+                                VerticalAlignment="Center"
+                                UpdateTextOnSelect="True"
+                                TextMemberPath="Name" />
+                
+                <ListView Grid.Row="2"
+                          x:Name="ServersListView"
+                          ItemsSource="{x:Bind Servers}"
+                          CanDragItems="True"
+                          CanReorderItems="True"
+                          AllowDrop="True"
+                          SelectionMode="Single"
+                          SelectionChanged="ServersListView_SelectionChanged"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:ServerEntry">
+                            <StackPanel Orientation="Vertical"
+                                        Spacing="6"
+                                        Margin="0,12,0,12">
+                                <Grid ColumnDefinitions="*, Auto"
+                                      VerticalAlignment="Center">
+
+                                    <!-- 左侧内容 -->
+                                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               Grid.Column="0"
+                                               TextTrimming="CharacterEllipsis" />
+
+                                    <!-- 右侧 Activated 标识 -->
+                                    <Border Background="{ThemeResource SystemFillColorSuccessBrush}"
+                                            CornerRadius="4"
+                                            Padding="6,2"
+                                            Visibility="{x:Bind IsActive, Mode=OneWay}"
+                                            Grid.Column="1"
+                                            Margin="8,0,0,0">
+                                        <TextBlock Text="● Activated"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="White" />
+                                    </Border>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="8">
+                                    <FontIcon Glyph="&#xEC27;"
+                                              FontSize="14" />
+                                    <TextBlock Text="{x:Bind Host, Mode=OneWay}"
+                                               FontSize="13"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text=":"
+                                               FontSize="13"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Text="{x:Bind Port, Mode=OneWay}"
+                                               FontSize="13"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <Border Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                            CornerRadius="4"
+                                            Padding="6,2"
+                                            Margin="4,0,0,0">
+                                        <TextBlock Text="{x:Bind Method, Mode=OneWay}"
+                                                   FontSize="11"
+                                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+
+            <!-- Details and runtime controls -->
+            <Grid Grid.Column="1"
+                  VerticalAlignment="Stretch">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <!-- 标题 -->
+                    <RowDefinition Height="*" />
+                    <!-- 可滚动内容 -->
+                    <RowDefinition Height="Auto" />
+                    <!-- 底部工具条 -->
+                </Grid.RowDefinitions>
+
+                <!-- 标题 -->
+                <TextBlock Grid.Row="0"
+                           Text="服务器详情"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,16" />
+
+                <!-- 详情内容 - 卡片样式 -->
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Margin="0,0,0,12">
+                    <StackPanel Orientation="Vertical"
+                                Spacing="8"
+                                Padding="0,0,12,80">
+
+                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="16"
+                                Padding="20">
+                            <StackPanel Orientation="Vertical"
+                                        Spacing="12">
+
+                                <!-- ========== 基本信息：两列网格，不再嵌套 StackPanel ========== -->
+                                <Grid x:Name="InfoGrid"
+                                      ColumnSpacing="12"
+                                      RowSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- 名称 -->
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="0"
+                                               Text="名称"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Grid.Row="0"
+                                               Grid.Column="1"
+                                               x:Name="TxtName"
+                                               Text="未选择"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               TextWrapping="WrapWholeWords" />
+
+                                    <!-- 地址 -->
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="0"
+                                               Text="地址"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               x:Name="TxtHost"
+                                               Text="未选择"
+                                               FontSize="16"
+                                               TextWrapping="WrapWholeWords" />
+
+                                    <!-- 端口 -->
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="0"
+                                               Text="端口"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock Grid.Row="2"
+                                               Grid.Column="1"
+                                               x:Name="TxtPort"
+                                               Text="未选择"
+                                               FontSize="16" />
+
+                                    <!-- 加密方式（小胶囊） -->
+                                    <TextBlock Grid.Row="3"
+                                               Grid.Column="0"
+                                               Text="加密方式"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <TextBlock x:Name="TxtMethod"
+                                               Grid.Row="3"
+                                               Grid.Column="1"
+                                               Text="未选择"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                                />
+                                </Grid>
+
+                                <!-- 细分隔线 -->
+                                <Rectangle Height="1"
+                                           Fill="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                           Opacity="0.5"
+                                           Margin="0,4,0,0" />
+
+                                <!-- ========== 网络延迟：单独一张卡，和上面的 Grid 不是同一行 ========== -->
+                                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        Padding="16">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="6">
+                                            <FontIcon Glyph="&#xEC4A;"
+                                                      Foreground="#A67CA8"
+                                                      VerticalAlignment="Center" />
+                                            <TextBlock Text="网络延迟"
+                                                       FontSize="13"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="1"
+                                                   x:Name="TxtLatency"
+                                                   Text="166 ms"
+                                                   FontSize="20"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- 底部工具条（贴底） -->
+                <Border Grid.Row="2"
+                        Padding="0"
+                        Margin="0,20,0,0">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                Spacing="12">
+                        <ToggleButton x:Name="BtnStartStop"
+                                      Content="启动"
+                                      Click="Button_Click" />
+                        <TextBlock x:Name="TxtStatus"
+                                   VerticalAlignment="Center"
+                                   Text="状态：已停止"
+                                   FontWeight="SemiBold" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    Spacing="8"
+                                    Margin="30,0,0,0">
+                            <TextBlock Text="代理模式 : "
+                                       VerticalAlignment="Center"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,4,0" />
+                            <ComboBox SelectionChanged="ColorComboBox_SelectionChanged"
+                                      SelectedIndex="1"
+                                      HorizontalAlignment="Left"
+                                      MinWidth="160">
+                                <x:String>全局模式</x:String>
+                                <x:String>PAC模式</x:String>
+                                <x:String>直连模式</x:String>
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </Grid>
+    </Grid>
+</Window>

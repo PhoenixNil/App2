@@ -1,0 +1,9 @@
+{
+  "server": "example.com",
+  "server_port": 8388,
+  "password": "mypassword123",
+  "method": "chacha20-ietf-poly1305",
+  "local_address": "127.0.0.1",
+  "local_port": 10808,
+  "timeout": 300
+}

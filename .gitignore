@@ -1,0 +1,23 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Temporary files
+*.tmp
+*.log
+
+# Packages
+packages/
+
+# Local configuration
+*.cache
+.idea/
+.vscode/
