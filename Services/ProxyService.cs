@@ -87,7 +87,7 @@ public class ProxyService
 
 		// Shadowsocks 使用 SOCKS5 代理
 		key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
-		key.SetValue("ProxyServer", $"socks={_proxyServer}", RegistryValueKind.String);
+		key.SetValue("ProxyServer", $"{_proxyServer}", RegistryValueKind.String);
 		key.SetValue("ProxyOverride", "localhost;127.*;10.*;172.16.*;172.31.*;192.168.*;<local>", RegistryValueKind.String);
 	}
 

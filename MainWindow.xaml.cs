@@ -76,12 +76,12 @@ public sealed partial class MainWindow : Window
 
 			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
 			{
-				TxtStatus.Text = "状态：运行中（端口已监听）";
+				TxtStatus.Text = "状态：运行中";
 			}
-			else if (log.Contains("error", StringComparison.OrdinalIgnoreCase) || log.Contains("panic", StringComparison.OrdinalIgnoreCase))
-			{
-				TxtStatus.Text = $"状态：错误 - {log}";
-			}
+			//else if (log.Contains("error", StringComparison.OrdinalIgnoreCase) || log.Contains("panic", StringComparison.OrdinalIgnoreCase))
+			//{
+			//	TxtStatus.Text = $"状态：错误 - {log}";
+			//}
 		});
 	}
 

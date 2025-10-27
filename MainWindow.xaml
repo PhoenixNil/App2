@@ -30,7 +30,7 @@
               ColumnSpacing="16">
             <Grid.ColumnDefinitions>
                 <!-- 左侧：使用比例，但限制最大宽度 -->
-                <ColumnDefinition Width="1.2*" MinWidth="380" MaxWidth="500" />
+                <ColumnDefinition Width="1.2*" MinWidth="380" MaxWidth="600" />
                 <!-- 右侧：使用比例，保证足够空间 -->
                 <ColumnDefinition Width="1.5*" MinWidth="400" />
             </Grid.ColumnDefinitions>
@@ -280,8 +280,9 @@
                                            Margin="0,4,0,0" />
 
                                 <!-- ========== 网络延迟：单独一张卡，和上面的 Grid 不是同一行 ========== -->
-                                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                <Border Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                        
                                         BorderThickness="1"
                                         CornerRadius="12"
                                         Padding="16">
@@ -321,21 +322,36 @@
                 <Border Grid.Row="2"
                         Padding="0"
                         Margin="0,20,0,0">
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Left"
-                                Spacing="12">
-                        <ToggleButton x:Name="BtnStartStop"
-                                      Content="启动"
-                                      Click="Button_Click" />
-                        <TextBlock x:Name="TxtStatus"
-                                   VerticalAlignment="Center"
-                                   Text="状态：已停止"
-                                   FontWeight="SemiBold" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <!-- 左侧：启动按钮和状态 -->
+                            <ColumnDefinition Width="*" />
+                            <!-- 中间填充 -->
+                            <ColumnDefinition Width="Auto" />
+                            <!-- 右侧：代理模式部分 -->
+                        </Grid.ColumnDefinitions>
 
+                        <!-- 左侧：启动按钮 + 状态 -->
                         <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    Grid.Column="0"
+                                    Spacing="12">
+                            <ToggleButton x:Name="BtnStartStop"
+                                          Content="启动"
+                                          Click="Button_Click" />
+                            <TextBlock x:Name="TxtStatus"
+                                       VerticalAlignment="Center"
+                                       Text="状态：已停止"
+                                       FontWeight="SemiBold" />
+                        </StackPanel>
+
+                        <!-- 右侧：代理模式 -->
+                        <StackPanel Orientation="Horizontal"
+                                    Grid.Column="2"
                                     VerticalAlignment="Center"
-                                    Spacing="8"
-                                    Margin="30,0,0,0">
+                                    HorizontalAlignment="Right"
+                                    Spacing="8">
                             <TextBlock Text="代理模式 : "
                                        VerticalAlignment="Center"
                                        FontWeight="SemiBold"
@@ -349,8 +365,9 @@
                                 <x:String>直连模式</x:String>
                             </ComboBox>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Border>
+
             </Grid>
 
         </Grid>
