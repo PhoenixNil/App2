@@ -95,7 +95,7 @@
                         </Button>
                     </StackPanel>
                 </StackPanel>
-                
+
                 <AutoSuggestBox Grid.Row="1"
                                 PlaceholderText="Search..."
                                 QueryIcon="Find"
@@ -104,7 +104,7 @@
                                 VerticalAlignment="Center"
                                 UpdateTextOnSelect="True"
                                 TextMemberPath="Name" />
-                
+
                 <ListView Grid.Row="2"
                           x:Name="ServersListView"
                           ItemsSource="{x:Bind Servers}"
@@ -171,7 +171,6 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </Grid>
-
             <!-- Details and runtime controls -->
             <Grid Grid.Column="1"
                   VerticalAlignment="Stretch">
@@ -213,6 +212,7 @@
                                       ColumnSpacing="12"
                                       RowSpacing="10">
                                     <Grid.ColumnDefinitions>
+                                    
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
@@ -224,10 +224,17 @@
                                     </Grid.RowDefinitions>
 
                                     <!-- 名称 -->
-                                    <TextBlock Grid.Row="0"
-                                               Grid.Column="0"
+                                    <StackPanel Orientation="Horizontal"
+                                                Grid.Row="0"
+                                                Grid.Column="0"
+                                                Spacing="8">
+                                        <SymbolIcon Symbol="Contact" />
+                                        
+
+                                        <TextBlock 
                                                Text="名称"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
                                     <TextBlock Grid.Row="0"
                                                Grid.Column="1"
                                                x:Name="TxtName"
@@ -237,10 +244,17 @@
                                                TextWrapping="WrapWholeWords" />
 
                                     <!-- 地址 -->
-                                    <TextBlock Grid.Row="1"
-                                               Grid.Column="0"
-                                               Text="地址"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Grid.Row="1"
+                                                Grid.Column="0"
+                                                Spacing="8">
+                                        <FontIcon Foreground="{ThemeResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                                                  Glyph="&#xE774;" />
+                                        <TextBlock 
+                                                   
+                                                   Text="地址"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
                                     <TextBlock Grid.Row="1"
                                                Grid.Column="1"
                                                x:Name="TxtHost"
@@ -249,21 +263,31 @@
                                                TextWrapping="WrapWholeWords" />
 
                                     <!-- 端口 -->
-                                    <TextBlock Grid.Row="2"
-                                               Grid.Column="0"
-                                               Text="端口"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Grid.Row="2"
+                                                Grid.Column="0"
+                                                Spacing="8">
+                                        <FontIcon Foreground="#73d3ff"  Glyph="&#xE95F;" />
+                                        <TextBlock Text="端口"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
                                     <TextBlock Grid.Row="2"
                                                Grid.Column="1"
                                                x:Name="TxtPort"
                                                Text="未选择"
                                                FontSize="16" />
 
-                                    <!-- 加密方式（小胶囊） -->
-                                    <TextBlock Grid.Row="3"
-                                               Grid.Column="0"
-                                               Text="加密方式"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <StackPanel Orientation="Horizontal"
+                                                Grid.Row="3"
+                                                Grid.Column="0"
+                                                Spacing="8">
+                                        <FontIcon Foreground="#FFA14D" Glyph="&#xE72E;" />
+
+                                        <TextBlock 
+                                                   
+                                                   Text="加密方式"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="TxtMethod"
                                                Grid.Row="3"
                                                Grid.Column="1"
@@ -335,6 +359,7 @@
                         <!-- 左侧：启动按钮 + 状态 -->
                         <StackPanel Orientation="Horizontal"
                                     HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
                                     Grid.Column="0"
                                     Spacing="12">
                             <ToggleButton x:Name="BtnStartStop"
@@ -345,7 +370,15 @@
                                        Text="状态：已停止"
                                        FontWeight="SemiBold" />
                         </StackPanel>
-
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <TextBlock 
+                                       Text="本地端口:" />
+                            <TextBlock>1080832</TextBlock>
+                        </StackPanel>
+                        
                         <!-- 右侧：代理模式 -->
                         <StackPanel Orientation="Horizontal"
                                     Grid.Column="2"
@@ -359,7 +392,7 @@
                             <ComboBox SelectionChanged="ColorComboBox_SelectionChanged"
                                       SelectedIndex="1"
                                       HorizontalAlignment="Left"
-                                      MinWidth="160">
+                                      MinWidth="120">
                                 <x:String>全局模式</x:String>
                                 <x:String>PAC模式</x:String>
                                 <x:String>直连模式</x:String>

@@ -3,7 +3,8 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -134,9 +135,15 @@ public sealed partial class MainWindow : Window
 		BtnEdit.IsEnabled = canModify;
 		BtnRemove.IsEnabled = canModify;
 
-		if (!hasSelection && _isRunning)
+		if (!hasSelection)
 		{
-			ToggleRunning(false);
+			if (_isRunning && (_activeServer == null || !Servers.Contains(_activeServer)))
+			{
+				ToggleRunning(false);
+			}
+
+			UpdateDetails(null);
+			return;
 		}
 
 		UpdateDetails(_selectedServer);
@@ -270,8 +277,37 @@ public sealed partial class MainWindow : Window
 			Content = $"确定要删除 {_selectedServer.Name}?",
 			PrimaryButtonText = "删除",
 			CloseButtonText = "取消",
-			DefaultButton = ContentDialogButton.Close
+			DefaultButton = ContentDialogButton.None
 		};
+		// 创建资源字典来覆盖颜色
+		var resources = new ResourceDictionary();
+
+		// Light 主题
+		var lightTheme = new ResourceDictionary();
+		lightTheme["AccentButtonBackground"] = new SolidColorBrush(Color.FromArgb(255, 220, 20, 60));
+		lightTheme["AccentButtonBackgroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 184, 17, 46));
+		lightTheme["AccentButtonBackgroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 139, 13, 35));
+		lightTheme["AccentButtonForeground"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		lightTheme["AccentButtonForegroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		lightTheme["AccentButtonForegroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+
+		// Dark 主题
+		var darkTheme = new ResourceDictionary();
+		darkTheme["AccentButtonBackground"] = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68));
+		darkTheme["AccentButtonBackgroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 102, 102));
+		darkTheme["AccentButtonBackgroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 204, 51, 51));
+		darkTheme["AccentButtonForeground"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		darkTheme["AccentButtonForegroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		darkTheme["AccentButtonForegroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+
+		resources.ThemeDictionaries["Light"] = lightTheme;
+		resources.ThemeDictionaries["Dark"] = darkTheme;
+
+		// 直接设置到 Dialog 的 Resources
+		dialog.Resources = resources;
+
+		// 确保 PrimaryButton 使用 AccentButtonStyle
+		dialog.PrimaryButtonStyle = (Style)Application.Current.Resources["AccentButtonStyle"];
 
 		var result = await dialog.ShowAsync();
 		if (result != ContentDialogResult.Primary)
