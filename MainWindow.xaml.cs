@@ -1,10 +1,9 @@
-using App2.Services;
+﻿using App2.Services;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
-using Windows.UI;
+using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -68,7 +67,6 @@ public sealed partial class MainWindow : Window
 
 		Closed += MainWindow_Closed;
 	}
-
 	private void OnEngineLogReceived(object? sender, string log)
 	{
 		DispatcherQueue.TryEnqueue(() =>
@@ -78,6 +76,7 @@ public sealed partial class MainWindow : Window
 			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
 			{
 				TxtStatus.Text = "状态：运行中";
+				IconStatus.Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorSuccessBrush"];
 			}
 			//else if (log.Contains("error", StringComparison.OrdinalIgnoreCase) || log.Contains("panic", StringComparison.OrdinalIgnoreCase))
 			//{
@@ -277,37 +276,38 @@ public sealed partial class MainWindow : Window
 			Content = $"确定要删除 {_selectedServer.Name}?",
 			PrimaryButtonText = "删除",
 			CloseButtonText = "取消",
+			PrimaryButtonStyle = (Style)Application.Current.Resources["DangerAccentButtonStyle"],
 			DefaultButton = ContentDialogButton.None
 		};
-		// 创建资源字典来覆盖颜色
-		var resources = new ResourceDictionary();
+		//// 创建资源字典来覆盖颜色
+		//var resources = new ResourceDictionary();
 
-		// Light 主题
-		var lightTheme = new ResourceDictionary();
-		lightTheme["AccentButtonBackground"] = new SolidColorBrush(Color.FromArgb(255, 220, 20, 60));
-		lightTheme["AccentButtonBackgroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 184, 17, 46));
-		lightTheme["AccentButtonBackgroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 139, 13, 35));
-		lightTheme["AccentButtonForeground"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
-		lightTheme["AccentButtonForegroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
-		lightTheme["AccentButtonForegroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		//// Light 主题
+		//var lightTheme = new ResourceDictionary();
+		//lightTheme["AccentButtonBackground"] = new SolidColorBrush(Color.FromArgb(255, 220, 20, 60));
+		//lightTheme["AccentButtonBackgroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 184, 17, 46));
+		//lightTheme["AccentButtonBackgroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 139, 13, 35));
+		//lightTheme["AccentButtonForeground"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		//lightTheme["AccentButtonForegroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		//lightTheme["AccentButtonForegroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
 
-		// Dark 主题
-		var darkTheme = new ResourceDictionary();
-		darkTheme["AccentButtonBackground"] = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68));
-		darkTheme["AccentButtonBackgroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 102, 102));
-		darkTheme["AccentButtonBackgroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 204, 51, 51));
-		darkTheme["AccentButtonForeground"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
-		darkTheme["AccentButtonForegroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
-		darkTheme["AccentButtonForegroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		//// Dark 主题
+		//var darkTheme = new ResourceDictionary();
+		//darkTheme["AccentButtonBackground"] = new SolidColorBrush(Color.FromArgb(255, 255, 68, 68));
+		//darkTheme["AccentButtonBackgroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 102, 102));
+		//darkTheme["AccentButtonBackgroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 204, 51, 51));
+		//darkTheme["AccentButtonForeground"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		//darkTheme["AccentButtonForegroundPointerOver"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+		//darkTheme["AccentButtonForegroundPressed"] = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
 
-		resources.ThemeDictionaries["Light"] = lightTheme;
-		resources.ThemeDictionaries["Dark"] = darkTheme;
+		//resources.ThemeDictionaries["Light"] = lightTheme;
+		//resources.ThemeDictionaries["Dark"] = darkTheme;
 
-		// 直接设置到 Dialog 的 Resources
-		dialog.Resources = resources;
+		//// 直接设置到 Dialog 的 Resources
+		//dialog.Resources = resources;
 
-		// 确保 PrimaryButton 使用 AccentButtonStyle
-		dialog.PrimaryButtonStyle = (Style)Application.Current.Resources["AccentButtonStyle"];
+		//// 确保 PrimaryButton 使用 AccentButtonStyle
+		//dialog.PrimaryButtonStyle = (Style)Application.Current.Resources["AccentButtonStyle"];
 
 		var result = await dialog.ShowAsync();
 		if (result != ContentDialogResult.Primary)
@@ -486,6 +486,8 @@ public sealed partial class MainWindow : Window
 				_isRunning = true;
 				BtnStartStop.Content = "停止";
 				TxtStatus.Text = "状态：运行中";
+				// 设置 IconStatus 为绿色
+				IconStatus.Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorSuccessBrush"];  // 绿色
 
 				if (_activeServer != null)
 				{
@@ -494,6 +496,9 @@ public sealed partial class MainWindow : Window
 
 				_selectedServer.IsActive = true;
 				_activeServer = _selectedServer;
+
+				// 🔧 添加这一行：触发 SelectionChanged 重新评估按钮状态
+				ServersListView_SelectionChanged(ServersListView, null!);
 			}
 			catch (Exception ex)
 			{
@@ -528,6 +533,8 @@ public sealed partial class MainWindow : Window
 				_isRunning = false;
 				BtnStartStop.Content = "启动";
 				TxtStatus.Text = "状态：已停止";
+				// 设置 IconStatus 为红色
+				IconStatus.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red);  // 红色
 				_configWriter.DeleteConfig();
 
 				if (_activeServer != null)
@@ -535,6 +542,9 @@ public sealed partial class MainWindow : Window
 					_activeServer.IsActive = false;
 					_activeServer = null;
 				}
+
+				// 🔧 添加这一行：触发 SelectionChanged 重新评估按钮状态
+				ServersListView_SelectionChanged(ServersListView, null!);
 			}
 		}
 	}
