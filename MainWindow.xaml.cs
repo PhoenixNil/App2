@@ -4,7 +4,9 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -13,6 +15,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using WinRT.Interop;
 
@@ -34,11 +37,20 @@ public sealed partial class MainWindow : Window
 	private ProxyMode _currentProxyMode = ProxyMode.PAC;
 
 	// 使用 10808 作为本地监听端口，避免与常见端口冲突
-	private const int LocalPort = 10808;
+	private const int DefaultLocalPort = 10808;
+	private const int MinimumLocalPort = 1024;
+	private const int MaximumLocalPort = 65535;
+
+	private int _localPort = DefaultLocalPort;
+	private ElementTheme _currentTheme = ElementTheme.Default;
+	private readonly Queue<string> _logEntries = new();
+	private const int MaxLogEntries = 200;
 
 	public MainWindow()
 	{
-		InitializeComponent();
+			InitializeComponent();
+			TxtLocalPortValue.Text = _localPort.ToString();
+			ApplyTheme(_currentTheme);
 
 		// 设置窗口默认大小（DIP 950x600），并考虑系统 DPI 缩放
 		var hWnd = WindowNative.GetWindowHandle(this);
@@ -71,7 +83,14 @@ public sealed partial class MainWindow : Window
 	{
 		DispatcherQueue.TryEnqueue(() =>
 		{
-			Debug.WriteLine(log);
+			var timestamped = $"[{DateTime.Now:HH:mm:ss}] {log}";
+			Debug.WriteLine(timestamped);
+
+			_logEntries.Enqueue(timestamped);
+			while (_logEntries.Count > MaxLogEntries)
+			{
+				_logEntries.Dequeue();
+			}
 
 			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
 			{
@@ -259,6 +278,103 @@ public sealed partial class MainWindow : Window
 			_selectedServer.OnPropertyChanged(nameof(ServerEntry.Method));
 
 			UpdateDetails(_selectedServer);
+		}
+	}
+	private void TestButton2Click(object sender, RoutedEventArgs e)
+	{
+		TestButton2TeachingTip.IsOpen = true;
+	}
+
+	private async void ViewLogsMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		var hasLogs = _logEntries.Count > 0;
+		var logText = hasLogs ? string.Join(Environment.NewLine, _logEntries) : "暂无日志记录。";
+
+		var textBlock = new TextBlock
+		{
+			Text = logText,
+			TextWrapping = TextWrapping.Wrap,
+			FontFamily = new FontFamily("Consolas"),
+			FontSize = 13
+		};
+
+		var scrollViewer = new ScrollViewer
+		{
+			Content = textBlock,
+			MaxHeight = 320,
+			VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+		};
+
+		var dialog = new ContentDialog
+		{
+			XamlRoot = Content.XamlRoot,
+			Title = "近期日志",
+			Content = scrollViewer,
+			CloseButtonText = "关闭",
+			DefaultButton = ContentDialogButton.Close
+		};
+
+		if (hasLogs)
+		{
+			dialog.PrimaryButtonText = "复制全部";
+			dialog.DefaultButton = ContentDialogButton.Primary;
+			dialog.PrimaryButtonClick += (_, _) =>
+			{
+				var dataPackage = new DataPackage();
+				dataPackage.SetText(logText);
+				Clipboard.SetContent(dataPackage);
+				Clipboard.Flush();
+			};
+		}
+
+		await dialog.ShowAsync();
+	}
+
+	private void ThemeButton_Click(object sender, RoutedEventArgs e)
+	{
+		if (sender is not Button button || button.Tag is not string tag)
+		{
+			return;
+		}
+
+		if (!Enum.TryParse<ElementTheme>(tag, true, out var theme))
+		{
+			return;
+		}
+
+		ApplyTheme(theme);
+		TestButton2TeachingTip.IsOpen = false;
+	}
+
+	private void ApplyTheme(ElementTheme theme)
+	{
+		if (_currentTheme != theme)
+		{
+			_currentTheme = theme;
+
+			if (Content is FrameworkElement root)
+			{
+				root.RequestedTheme = theme;
+			}
+		}
+
+		UpdateThemeButtonsState();
+	}
+
+	private void UpdateThemeButtonsState()
+	{
+		if (TestButton2TeachingTip.Content is not StackPanel panel)
+		{
+			return;
+		}
+
+		foreach (var child in panel.Children)
+		{
+			if (child is Button themeButton && themeButton.Tag is string tag &&
+			    Enum.TryParse<ElementTheme>(tag, true, out var theme))
+			{
+				themeButton.IsEnabled = theme != _currentTheme;
+			}
 		}
 	}
 
@@ -472,7 +588,7 @@ public sealed partial class MainWindow : Window
 
 			try
 			{
-				_configWriter.WriteConfig(_selectedServer, LocalPort);
+				_configWriter.WriteConfig(_selectedServer, _localPort);
 				var configPath = _configWriter.GetConfigPath();
 				if (!File.Exists(configPath))
 				{
@@ -480,7 +596,7 @@ public sealed partial class MainWindow : Window
 				}
 
 				_engineService.Start(configPath);
-				_proxyService.SetProxyServer("127.0.0.1", LocalPort);
+				_proxyService.SetProxyServer("127.0.0.1", _localPort);
 				_proxyService.SetProxyMode(_currentProxyMode);
 
 				_isRunning = true;
@@ -546,6 +662,101 @@ public sealed partial class MainWindow : Window
 				// 🔧 添加这一行：触发 SelectionChanged 重新评估按钮状态
 				ServersListView_SelectionChanged(ServersListView, null!);
 			}
+		}
+	}
+
+	private async void EditLocalPortMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		var numberBox = new NumberBox
+		{
+			Header = "本地端口",
+			Minimum = MinimumLocalPort,
+			Maximum = MaximumLocalPort,
+			Value = _localPort,
+			ValidationMode = NumberBoxValidationMode.Disabled, // 关闭自动纠正
+			SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Hidden
+		};
+
+		var rangeText = new TextBlock
+		{
+			Text = $"有效范围：{MinimumLocalPort} - {MaximumLocalPort}",
+			Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+			TextWrapping = TextWrapping.Wrap
+		};
+
+
+		var errorText = new TextBlock
+		{
+			Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCriticalBrush"],
+			Visibility = Visibility.Collapsed,
+			TextWrapping = TextWrapping.Wrap
+		};
+
+		var contentPanel = new StackPanel
+		{
+			Spacing = 8
+		};
+		contentPanel.Children.Add(numberBox);
+		contentPanel.Children.Add(rangeText);
+		contentPanel.Children.Add(errorText);
+
+		var dialog = new ContentDialog
+		{
+			XamlRoot = Content.XamlRoot,
+			Title = "编辑本地端口",
+			PrimaryButtonText = "确定",
+			CloseButtonText = "取消",
+			DefaultButton = ContentDialogButton.Primary,
+			Content = contentPanel
+		};
+
+		var portChanged = false;
+
+		dialog.PrimaryButtonClick += (_, args) =>
+		{
+			if (double.IsNaN(numberBox.Value))
+			{
+				errorText.Text = "请输入有效的端口号。";
+				errorText.Visibility = Visibility.Visible;
+				args.Cancel = true;
+				return;
+			}
+
+
+			var newPort = (int)Math.Round(numberBox.Value);
+			if (newPort < MinimumLocalPort || newPort > MaximumLocalPort)
+			{
+				errorText.Text = $"端口号必须在 {MinimumLocalPort} 至 {MaximumLocalPort} 之间。";
+				errorText.Visibility = Visibility.Visible;
+				args.Cancel = true;
+				return;
+			}
+
+			errorText.Visibility = Visibility.Collapsed;
+
+			if (newPort == _localPort)
+			{
+				return;
+			}
+
+			_localPort = newPort;
+			TxtLocalPortValue.Text = _localPort.ToString();
+			portChanged = true;
+		};
+
+		await dialog.ShowAsync();
+
+		if (portChanged && _isRunning)
+		{
+			var reminderDialog = new ContentDialog
+			{
+				XamlRoot = Content.XamlRoot,
+				Title = "提示",
+				Content = "端口号已更新，停止并重新启动服务后生效。",
+				CloseButtonText = "知道了"
+			};
+
+			await reminderDialog.ShowAsync();
 		}
 	}
 

@@ -381,13 +381,64 @@
                                 </Button.Content>
                                 <Button.Flyout>
                                     <MenuFlyout>
-                                        <MenuFlyoutItem Text="编辑本地端口" />
-                                        <MenuFlyoutItem Text="查看日志" />
-                                        <MenuFlyoutItem Text="设置主题" />
+                                        <MenuFlyoutItem Text="编辑本地端口"
+                                                        Click="EditLocalPortMenuItem_Click" />
+                                        <MenuFlyoutItem Text="查看日志"
+                                                        Click="ViewLogsMenuItem_Click" />
+                                        <MenuFlyoutItem Text="设置主题"
+                                                        Click="TestButton2Click" />
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
                         </StackPanel>
+                        <!-- 方案2: 使用图标+文字，视觉更丰富 -->
+                        <TeachingTip Title="色彩模式"
+                                     PreferredPlacement="Auto"
+                                     x:Name="TestButton2TeachingTip"
+                                     PlacementMargin="20"
+                                     >
+                            <TeachingTip.Content>
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="10">
+                                    <Button MinWidth="70"
+                                            Padding="12,8"
+                                            Tag="Light"
+                                            Click="ThemeButton_Click">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="6">
+                                            <FontIcon Glyph="&#xE706;"
+                                                      FontSize="14" />
+                                            <TextBlock Text="浅色"
+                                                       FontSize="14" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button MinWidth="70"
+                                            Padding="12,8"
+                                            Tag="Dark"
+                                            Click="ThemeButton_Click">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="6">
+                                            <FontIcon Glyph="&#xE708;"
+                                                      FontSize="14" />
+                                            <TextBlock Text="深色"
+                                                       FontSize="14" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button MinWidth="70"
+                                            Padding="12,8"
+                                            Tag="Default"
+                                            Click="ThemeButton_Click">
+                                        <StackPanel Orientation="Horizontal"
+                                                    Spacing="6">
+                                            <FontIcon Glyph="&#xE770;"
+                                                      FontSize="14" />
+                                            <TextBlock Text="跟随系统"
+                                                       FontSize="14" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </TeachingTip.Content>
+                        </TeachingTip>
 
                         <!-- 第二行：端口信息与模式切换 -->
                         <Grid Grid.Row="1"
@@ -411,8 +462,8 @@
                                                 Spacing="2">
                                         <TextBlock Text="本地端口："
                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <TextBlock Text="10808"
-                                                   
+                                        <TextBlock x:Name="TxtLocalPortValue"
+                                                   Text="10808"
                                                    FontWeight="SemiBold" />
                                     </StackPanel>
                                 </Border>
