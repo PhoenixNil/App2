@@ -42,8 +42,8 @@ public sealed partial class MainWindow : Window
 
 		Closed += MainWindow_Closed;
 
-		// Initialize ViewModel after window is loaded
-		ViewModel.Initialize();
+		// Initialize ViewModel after window is loaded, passing DispatcherQueue
+		ViewModel.Initialize(DispatcherQueue);
 	}
 
 	private void MainWindow_Closed(object sender, WindowEventArgs args)

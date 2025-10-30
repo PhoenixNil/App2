@@ -1,6 +1,7 @@
-using App2.Models;
+﻿using App2.Models;
 using App2.Services;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -26,6 +27,8 @@ public class MainWindowViewModel : ViewModelBase
 	private readonly ProxyService _proxyService;
 	private readonly ConfigStorage _configStorage;
 	private readonly LatencyTestService _latencyTestService;
+	
+	private DispatcherQueue? _dispatcherQueue;
 
 	private ServerEntry? _selectedServer;
 	private ServerEntry? _activeServer;
@@ -40,7 +43,7 @@ public class MainWindowViewModel : ViewModelBase
 	private const int DefaultLocalPort = 10808;
 	private const int MinimumLocalPort = 1024;
 	private const int MaximumLocalPort = 65535;
-	private const int MaxLogEntries = 200;
+	private const int MaxLogEntries = 100;
 
 	#endregion
 
@@ -70,6 +73,8 @@ public class MainWindowViewModel : ViewModelBase
 			if (SetProperty(ref _selectedServer, value))
 			{
 				OnSelectedServerChanged();
+				// 通知测试延迟命令重新评估 CanExecute
+				(TestLatencyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
 			}
 		}
 	}
@@ -167,7 +172,14 @@ public class MainWindowViewModel : ViewModelBase
 	public bool CanTestLatency
 	{
 		get => _canTestLatency;
-		set => SetProperty(ref _canTestLatency, value);
+		set
+		{
+			if (SetProperty(ref _canTestLatency, value))
+			{
+				// 通知命令重新评估 CanExecute
+				(TestLatencyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+			}
+		}
 	}
 
 	private int _proxyModeIndex = 1; // PAC mode by default
@@ -234,9 +246,9 @@ public class MainWindowViewModel : ViewModelBase
 
 	#region Public Methods
 
-	public void Initialize()
+	public void Initialize(DispatcherQueue dispatcherQueue)
 	{
-		// Called after View is loaded
+		_dispatcherQueue = dispatcherQueue;
 	}
 
 	public void Cleanup()
@@ -582,20 +594,24 @@ public class MainWindowViewModel : ViewModelBase
 
 	private void OnEngineLogReceived(object? sender, string log)
 	{
-		var timestamped = $"[{DateTime.Now:HH:mm:ss}] {log}";
-		Debug.WriteLine(timestamped);
-
-		_logEntries.Enqueue(timestamped);
-		while (_logEntries.Count > MaxLogEntries)
+		// Ensure UI updates happen on the UI thread
+		_dispatcherQueue?.TryEnqueue(() =>
 		{
-			_logEntries.Dequeue();
-		}
+			var timestamped = $"[{DateTime.Now:HH:mm:ss}] {log}";
+			Debug.WriteLine(timestamped);
 
-		if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
-		{
-			StatusText = "状态：运行中";
-			StatusIconForeground = new SolidColorBrush(Colors.Green);
-		}
+			_logEntries.Enqueue(timestamped);
+			while (_logEntries.Count > MaxLogEntries)
+			{
+				_logEntries.Dequeue();
+			}
+
+			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
+			{
+				StatusText = "状态：运行中";
+				StatusIconForeground = new SolidColorBrush(Colors.Green);
+			}
+		});
 	}
 
 	private void OnProxyModeChanged(int index)
