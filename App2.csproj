@@ -71,6 +71,12 @@
       <!-- 单项目 MSIX 打包：确保被写入安装包资源 -->
       <PackagePath>Assets\engine\</PackagePath>
     </None>
+    <None Include="pac.txt">
+      <!-- 非打包运行（bin\...）需要 -->
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <!-- dotnet publish 需要 -->
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

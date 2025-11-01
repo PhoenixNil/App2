@@ -39,6 +39,7 @@ public class ProxyService
 	private const int INTERNET_OPTION_REFRESH = 37;
 
 	private string _proxyServer = "127.0.0.1:1080";
+	private string _pacUrl = string.Empty;
 	private ProxyMode _currentMode = ProxyMode.Direct;
 
 	/// <summary>
@@ -96,18 +97,27 @@ public class ProxyService
 	/// </summary>
 	private void EnablePACProxy()
 	{
-		// PAC 模式需要一个 PAC 文件的 URL
-		// 这里简化实现，暂时使用全局代理
-		// 实际项目中需要生成并托管一个 PAC 文件
 		using var key = Registry.CurrentUser.OpenSubKey(RegistryPath, true);
 		if (key == null) return;
 
-		key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
-		key.SetValue("ProxyServer", $"socks={_proxyServer}", RegistryValueKind.String);
-		key.SetValue("ProxyOverride", "localhost;127.*;10.*;172.16.*;172.31.*;192.168.*;<local>", RegistryValueKind.String);
+		// PAC 模式下禁用手动代理，启用自动配置
+		key.SetValue("ProxyEnable", 0, RegistryValueKind.DWord);
+		key.DeleteValue("ProxyServer", false);
+		key.DeleteValue("ProxyOverride", false);
 
-		// 如果有 PAC 文件，可以设置：
-		// key.SetValue("AutoConfigURL", pacUrl, RegistryValueKind.String);
+		// 设置 PAC 文件 URL
+		if (!string.IsNullOrEmpty(_pacUrl))
+		{
+			key.SetValue("AutoConfigURL", _pacUrl, RegistryValueKind.String);
+		}
+	}
+
+	/// <summary>
+	/// 设置 PAC 文件的 URL
+	/// </summary>
+	public void SetPACUrl(string pacUrl)
+	{
+		_pacUrl = pacUrl;
 	}
 
 	/// <summary>

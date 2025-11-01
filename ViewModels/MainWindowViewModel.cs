@@ -27,6 +27,7 @@ public class MainWindowViewModel : ViewModelBase
 	private readonly ProxyService _proxyService;
 	private readonly ConfigStorage _configStorage;
 	private readonly LatencyTestService _latencyTestService;
+	private readonly PACServerService _pacServerService;
 	
 	private DispatcherQueue? _dispatcherQueue;
 
@@ -223,8 +224,10 @@ public class MainWindowViewModel : ViewModelBase
 		_proxyService = new ProxyService();
 		_configStorage = new ConfigStorage();
 		_latencyTestService = new LatencyTestService();
+		_pacServerService = new PACServerService(7090);
 
 		_engineService.LogReceived += OnEngineLogReceived;
+		_pacServerService.LogReceived += OnPACLogReceived;
 
 		// Initialize commands
 		StartStopCommand = new AsyncRelayCommand(ExecuteStartStopAsync, CanExecuteStartStop);
@@ -257,12 +260,15 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			_engineService.Stop();
 			_proxyService.ClearProxy();
+			// Block on async operation to ensure PAC server is properly stopped before cleanup
+			_pacServerService.StopAsync().GetAwaiter().GetResult();
 		}
 
 		_latencyTestCancellation?.Cancel();
 		_latencyTestCancellation?.Dispose();
 
 		_engineService.Dispose();
+		_pacServerService.Dispose();
 		_configWriter.DeleteConfig();
 	}
 
@@ -614,7 +620,23 @@ public class MainWindowViewModel : ViewModelBase
 		});
 	}
 
-	private void OnProxyModeChanged(int index)
+	private void OnPACLogReceived(object? sender, string log)
+	{
+		// Ensure UI updates happen on the UI thread
+		_dispatcherQueue?.TryEnqueue(() =>
+		{
+			var timestamped = $"[{DateTime.Now:HH:mm:ss}] [PAC] {log}";
+			Debug.WriteLine(timestamped);
+
+			_logEntries.Enqueue(timestamped);
+			while (_logEntries.Count > MaxLogEntries)
+			{
+				_logEntries.Dequeue();
+			}
+		});
+	}
+
+	private async void OnProxyModeChanged(int index)
 	{
 		_currentProxyMode = index switch
 		{
@@ -626,6 +648,25 @@ public class MainWindowViewModel : ViewModelBase
 
 		if (_isRunning)
 		{
+			// Stop PAC server if switching away from PAC mode
+			if (_currentProxyMode != ProxyMode.PAC)
+			{
+				await _pacServerService.StopAsync();
+			}
+			// Start PAC server if switching to PAC mode
+			else if (_currentProxyMode == ProxyMode.PAC)
+			{
+				try
+				{
+					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
+					_proxyService.SetPACUrl(_pacServerService.PACUrl);
+				}
+				catch (Exception ex)
+				{
+					Debug.WriteLine($"启动 PAC 服务器失败: {ex.Message}");
+				}
+			}
+			
 			_proxyService.SetProxyMode(_currentProxyMode);
 		}
 	}
@@ -659,11 +700,11 @@ public class MainWindowViewModel : ViewModelBase
 		}
 	}
 
-	private Task StartAsync()
+	private async Task StartAsync()
 	{
 		if (_selectedServer == null)
 		{
-			return Task.CompletedTask;
+			return;
 		}
 
 		try
@@ -676,6 +717,14 @@ public class MainWindowViewModel : ViewModelBase
 			}
 
 			_engineService.Start(configPath);
+			
+			// Start PAC server if in PAC mode
+			if (_currentProxyMode == ProxyMode.PAC)
+			{
+				await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
+				_proxyService.SetPACUrl(_pacServerService.PACUrl);
+			}
+			
 			_proxyService.SetProxyServer("127.0.0.1", _localPort);
 			_proxyService.SetProxyMode(_currentProxyMode);
 
@@ -695,8 +744,6 @@ public class MainWindowViewModel : ViewModelBase
 
 			// Update command states
 			OnSelectedServerChanged();
-
-			return Task.CompletedTask;
 		}
 		catch (Exception ex)
 		{
@@ -708,12 +755,13 @@ public class MainWindowViewModel : ViewModelBase
 		}
 	}
 
-	private Task StopAsync()
+	private async Task StopAsync()
 	{
 		try
 		{
 			_engineService.Stop();
 			_proxyService.ClearProxy();
+			await _pacServerService.StopAsync();
 		}
 		catch (Exception ex)
 		{
@@ -737,8 +785,6 @@ public class MainWindowViewModel : ViewModelBase
 			// Update command states
 			OnSelectedServerChanged();
 		}
-
-		return Task.CompletedTask;
 	}
 
 	private bool CanExecuteTestLatency() => !_isTestingLatency && _selectedServer != null;

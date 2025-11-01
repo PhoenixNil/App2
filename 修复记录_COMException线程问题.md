@@ -367,3 +367,9 @@ private void OnEngineLogReceived(object? sender, string log)
 
 现在应用程序可以正确处理跨线程的 UI 更新，不再出现 COMException！
 
+
+
+
+
+
+
