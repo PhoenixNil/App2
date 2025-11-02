@@ -101,14 +101,24 @@
                     </StackPanel>
                 </StackPanel>
 
-                <AutoSuggestBox Grid.Row="1"
+                <AutoSuggestBox x:Name="ServerSearchBox"
+                                Grid.Row="1"
                                 PlaceholderText="Search..."
                                 QueryIcon="Find"
                                 HorizontalAlignment="Stretch"
                                 Margin="0,16,0,16"
                                 VerticalAlignment="Center"
                                 UpdateTextOnSelect="True"
-                                TextMemberPath="Name" />
+                                TextChanged="ServerSearchBox_TextChanged"
+                                SuggestionChosen="ServerSearchBox_SuggestionChosen"
+                                QuerySubmitted="ServerSearchBox_QuerySubmitted"
+                                TextMemberPath="Name">
+                    <AutoSuggestBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:ServerEntry">
+                            <TextBlock Text="{x:Bind Name, Mode=OneWay}" />
+                        </DataTemplate>
+                    </AutoSuggestBox.ItemTemplate>
+                </AutoSuggestBox>
 
                 <ListView Grid.Row="2"
                           x:Name="ServersListView"

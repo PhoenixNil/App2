@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Linq;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
 using WinRT.Interop;
@@ -253,6 +254,69 @@ public sealed partial class MainWindow : Window
 		};
 
 		return dialog;
+	}
+
+	#endregion
+
+	#region UI Event Handlers - Server Search
+
+	private void ServerSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+	{
+		if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
+		{
+			return;
+		}
+
+		var query = sender.Text.Trim();
+		if (string.IsNullOrEmpty(query))
+		{
+			sender.ItemsSource = null;
+			return;
+		}
+
+		var matches = ViewModel.Servers
+			.Where(server => !string.IsNullOrEmpty(server.Name) &&
+				server.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+			.ToList();
+
+		sender.ItemsSource = matches;
+	}
+
+	private void ServerSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+	{
+		if (args.SelectedItem is ServerEntry server)
+		{
+			ViewModel.SelectedServer = server;
+			sender.Text = server.Name;
+		}
+	}
+
+	private void ServerSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+	{
+		if (args.ChosenSuggestion is ServerEntry chosenServer)
+		{
+			ViewModel.SelectedServer = chosenServer;
+			return;
+		}
+
+		var query = args.QueryText?.Trim();
+		if (string.IsNullOrEmpty(query))
+		{
+			return;
+		}
+
+		var match = ViewModel.Servers.FirstOrDefault(server =>
+			string.Equals(server.Name, query, StringComparison.OrdinalIgnoreCase));
+
+		match ??= ViewModel.Servers.FirstOrDefault(server =>
+			!string.IsNullOrEmpty(server.Name) &&
+			server.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+
+		if (match != null)
+		{
+			ViewModel.SelectedServer = match;
+			sender.Text = match.Name;
+		}
 	}
 
 	#endregion
