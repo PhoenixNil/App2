@@ -1,23 +1,59 @@
 # Build results
 bin/
 obj/
+**/bin/
+**/obj/
+Debug/
+Release/
+x64/
+x86/
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+*.appx
+*.appxbundle
+*.appxupload
 
-# Visual Studio
+# Visual Studio caches/options
 .vs/
 *.suo
 *.user
 *.userosscache
-*.sln.docstates
 *.rsuser
+*.sln.docstates
 
-# Temporary files
-*.tmp
-*.log
-
-# Packages
-packages/
-
-# Local configuration
+# Intermediate / generated files
+*.pdb
+*.ipdb
+*.opendb
+*.mdb
+*.dbmdl
 *.cache
+*.tmp
+*.tlog
+*.dmp
+
+# Test and coverage
+TestResults/
+*.coverage
+*.coveragexml
+*.vsp
+*.vspx
+*.psess
+
+# NuGet packages
+packages/
+.nuget/
+artifacts/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+
+# Local tooling
 .idea/
 .vscode/
+*.userprefs
+
+# Logs
+*.log
