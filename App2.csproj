@@ -36,11 +36,11 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6584" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6901" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
+    <PackageReference Include="WinUIEx" Version="2.9.0" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Assets\Icons\" />
     <Folder Include="models\" />
     <Folder Include="Services\" />
     <Folder Include="ViewModels\" />
@@ -60,7 +60,8 @@
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
+    <ApplicationIcon>Assets\Icons\output.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <None Include="Assets\engine\sslocal.exe">
@@ -77,6 +78,12 @@
       <!-- dotnet publish 需要 -->
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Assets\Icons\output.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

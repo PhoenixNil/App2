@@ -98,7 +98,7 @@ public class PACServerService : IDisposable
 		{
 			try
 			{
-				await _listenerTask;
+				await _listenerTask.ConfigureAwait(false);
 			}
 			catch (OperationCanceledException)
 			{
@@ -217,4 +217,3 @@ public class PACServerService : IDisposable
 		_cancellationTokenSource?.Dispose();
 	}
 }
-

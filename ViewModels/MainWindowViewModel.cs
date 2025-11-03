@@ -1,4 +1,4 @@
-ï»¿using App2.Models;
+using App2.Models;
 using App2.Services;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -52,7 +52,7 @@ public class MainWindowViewModel : ViewModelBase
 
 	public ObservableCollection<ServerEntry> Servers { get; } = new();
 
-	private string _statusText = "çŠ¶æ€ï¼šæœªå¯åŠ¨";
+	private string _statusText = "×´Ì¬£ºÎ´Æô¶¯";
 	public string StatusText
 	{
 		get => _statusText;
@@ -74,34 +74,34 @@ public class MainWindowViewModel : ViewModelBase
 			if (SetProperty(ref _selectedServer, value))
 			{
 				OnSelectedServerChanged();
-				// é€šçŸ¥æµ‹è¯•å»¶è¿Ÿå‘½ä»¤é‡æ–°è¯„ä¼° CanExecute
+				// Í¨Öª²âÊÔÑÓ³ÙÃüÁîÖØĞÂÆÀ¹À CanExecute
 				(TestLatencyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
 			}
 		}
 	}
 
-	private string _selectedName = "æœªé€‰æ‹©";
+	private string _selectedName = "Î´Ñ¡Ôñ";
 	public string SelectedName
 	{
 		get => _selectedName;
 		set => SetProperty(ref _selectedName, value);
 	}
 
-	private string _selectedHost = "æœªé€‰æ‹©";
+	private string _selectedHost = "Î´Ñ¡Ôñ";
 	public string SelectedHost
 	{
 		get => _selectedHost;
 		set => SetProperty(ref _selectedHost, value);
 	}
 
-	private string _selectedPort = "æœªé€‰æ‹©";
+	private string _selectedPort = "Î´Ñ¡Ôñ";
 	public string SelectedPort
 	{
 		get => _selectedPort;
 		set => SetProperty(ref _selectedPort, value);
 	}
 
-	private string _selectedMethod = "æœªé€‰æ‹©";
+	private string _selectedMethod = "Î´Ñ¡Ôñ";
 	public string SelectedMethod
 	{
 		get => _selectedMethod;
@@ -129,7 +129,7 @@ public class MainWindowViewModel : ViewModelBase
 		set => SetProperty(ref _localPortText, value);
 	}
 
-	private string _startStopButtonContent = "å¯åŠ¨";
+	private string _startStopButtonContent = "Æô¶¯";
 	public string StartStopButtonContent
 	{
 		get => _startStopButtonContent;
@@ -177,7 +177,7 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			if (SetProperty(ref _canTestLatency, value))
 			{
-				// é€šçŸ¥å‘½ä»¤é‡æ–°è¯„ä¼° CanExecute
+				// Í¨ÖªÃüÁîÖØĞÂÆÀ¹À CanExecute
 				(TestLatencyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
 			}
 		}
@@ -254,14 +254,14 @@ public class MainWindowViewModel : ViewModelBase
 		_dispatcherQueue = dispatcherQueue;
 	}
 
-	public void Cleanup()
+	public async Task CleanupAsync()
 	{
 		if (_isRunning)
 		{
 			_engineService.Stop();
 			_proxyService.ClearProxy();
-			// Block on async operation to ensure PAC server is properly stopped before cleanup
-			_pacServerService.StopAsync().GetAwaiter().GetResult();
+			// Wait for the PAC server to stop completely before continuing cleanup
+			await _pacServerService.StopAsync().ConfigureAwait(false);
 		}
 
 		_latencyTestCancellation?.Cancel();
@@ -359,7 +359,7 @@ public class MainWindowViewModel : ViewModelBase
 
 		return new ServerEntry
 		{
-			Name = string.IsNullOrWhiteSpace(name) ? "æœªå‘½åèŠ‚ç‚¹" : name.Trim(),
+			Name = string.IsNullOrWhiteSpace(name) ? "Î´ÃüÃû½Úµã" : name.Trim(),
 			Host = host.Trim(),
 			Port = portValue,
 			Password = password.Trim(),
@@ -421,14 +421,14 @@ public class MainWindowViewModel : ViewModelBase
 
 		if (double.IsNaN(value))
 		{
-			errorMessage = "è¯·è¾“å…¥æœ‰æ•ˆçš„ç«¯å£å·ã€‚";
+			errorMessage = "ÇëÊäÈëÓĞĞ§µÄ¶Ë¿ÚºÅ¡£";
 			return false;
 		}
 
 		var newPort = (int)Math.Round(value);
 		if (newPort < MinimumLocalPort || newPort > MaximumLocalPort)
 		{
-			errorMessage = $"ç«¯å£å·å¿…é¡»åœ¨ {MinimumLocalPort} è‡³ {MaximumLocalPort} ä¹‹é—´ã€‚";
+			errorMessage = $"¶Ë¿ÚºÅ±ØĞëÔÚ {MinimumLocalPort} ÖÁ {MaximumLocalPort} Ö®¼ä¡£";
 			return false;
 		}
 
@@ -446,7 +446,7 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		return _logEntries.Count > 0
 			? string.Join(Environment.NewLine, _logEntries)
-			: "æš‚æ— æ—¥å¿—è®°å½•ã€‚";
+			: "ÔİÎŞÈÕÖ¾¼ÇÂ¼¡£";
 	}
 
 	public bool HasLogs => _logEntries.Count > 0;
@@ -472,7 +472,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"åŠ è½½æœåŠ¡å™¨åˆ—è¡¨å¤±è´¥: {ex.Message}");
+			Debug.WriteLine($"¼ÓÔØ·şÎñÆ÷ÁĞ±íÊ§°Ü: {ex.Message}");
 		}
 	}
 
@@ -484,7 +484,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"ä¿å­˜æœåŠ¡å™¨åˆ—è¡¨å¤±è´¥: {ex.Message}");
+			Debug.WriteLine($"±£´æ·şÎñÆ÷ÁĞ±íÊ§°Ü: {ex.Message}");
 		}
 	}
 
@@ -520,10 +520,10 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		if (server == null)
 		{
-			SelectedName = "æœªé€‰æ‹©";
-			SelectedHost = "æœªé€‰æ‹©";
-			SelectedPort = "æœªé€‰æ‹©";
-			SelectedMethod = "æœªé€‰æ‹©";
+			SelectedName = "Î´Ñ¡Ôñ";
+			SelectedHost = "Î´Ñ¡Ôñ";
+			SelectedPort = "Î´Ñ¡Ôñ";
+			SelectedMethod = "Î´Ñ¡Ôñ";
 			LatencyText = "--";
 			LatencyForeground = new SolidColorBrush(Colors.Gray);
 			return;
@@ -533,7 +533,7 @@ public class MainWindowViewModel : ViewModelBase
 		SelectedHost = server.Host;
 		SelectedPort = server.Port.ToString();
 		SelectedMethod = server.Method;
-		LatencyText = "æµ‹è¯•ä¸­...";
+		LatencyText = "²âÊÔÖĞ...";
 		LatencyForeground = new SolidColorBrush(Colors.Gray);
 	}
 
@@ -568,10 +568,10 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"å»¶è¿Ÿæµ‹è¯•å¤±è´¥: {ex.Message}");
+			Debug.WriteLine($"ÑÓ³Ù²âÊÔÊ§°Ü: {ex.Message}");
 			if (_selectedServer == server)
 			{
-				LatencyText = "æµ‹è¯•å¤±è´¥";
+				LatencyText = "²âÊÔÊ§°Ü";
 				LatencyForeground = new SolidColorBrush(Colors.Red);
 			}
 		}
@@ -614,7 +614,7 @@ public class MainWindowViewModel : ViewModelBase
 
 			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
 			{
-				StatusText = "çŠ¶æ€ï¼šè¿è¡Œä¸­";
+				StatusText = "×´Ì¬£ºÔËĞĞÖĞ";
 				StatusIconForeground = new SolidColorBrush(Colors.Green);
 			}
 		});
@@ -663,7 +663,7 @@ public class MainWindowViewModel : ViewModelBase
 				}
 				catch (Exception ex)
 				{
-					Debug.WriteLine($"å¯åŠ¨ PAC æœåŠ¡å™¨å¤±è´¥: {ex.Message}");
+					Debug.WriteLine($"Æô¶¯ PAC ·şÎñÆ÷Ê§°Ü: {ex.Message}");
 				}
 			}
 			
@@ -713,7 +713,7 @@ public class MainWindowViewModel : ViewModelBase
 			var configPath = _configWriter.GetConfigPath();
 			if (!File.Exists(configPath))
 			{
-				throw new InvalidOperationException($"é…ç½®æ–‡ä»¶ç”Ÿæˆå¤±è´¥: {configPath}");
+				throw new InvalidOperationException($"ÅäÖÃÎÄ¼şÉú³ÉÊ§°Ü: {configPath}");
 			}
 
 			_engineService.Start(configPath);
@@ -729,9 +729,9 @@ public class MainWindowViewModel : ViewModelBase
 			_proxyService.SetProxyMode(_currentProxyMode);
 
 			IsRunning = true;
-			StartStopButtonContent = "åœæ­¢";
+			StartStopButtonContent = "Í£Ö¹";
 			StartStopButtonChecked = true;
-			StatusText = "çŠ¶æ€ï¼šè¿è¡Œä¸­";
+			StatusText = "×´Ì¬£ºÔËĞĞÖĞ";
 			StatusIconForeground = new SolidColorBrush(Colors.Green);
 
 			if (_activeServer != null)
@@ -749,7 +749,7 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			IsRunning = false;
 			StartStopButtonChecked = false;
-			StatusText = $"å¯åŠ¨å¤±è´¥: {ex.Message}";
+			StatusText = $"Æô¶¯Ê§°Ü: {ex.Message}";
 
 			throw; // Re-throw to let View handle the error dialog
 		}
@@ -765,14 +765,14 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"åœæ­¢å¼•æ“å¤±è´¥: {ex.Message}");
+			Debug.WriteLine($"Í£Ö¹ÒıÇæÊ§°Ü: {ex.Message}");
 		}
 		finally
 		{
 			IsRunning = false;
-			StartStopButtonContent = "å¯åŠ¨";
+			StartStopButtonContent = "Æô¶¯";
 			StartStopButtonChecked = false;
-			StatusText = "çŠ¶æ€ï¼šå·²åœæ­¢";
+			StatusText = "×´Ì¬£ºÒÑÍ£Ö¹";
 			StatusIconForeground = new SolidColorBrush(Colors.Red);
 			_configWriter.DeleteConfig();
 
@@ -936,4 +936,3 @@ public class MainWindowViewModel : ViewModelBase
 
 	#endregion
 }
-
