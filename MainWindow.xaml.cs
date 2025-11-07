@@ -535,9 +535,19 @@ public sealed partial class MainWindow : Window
 		await dialog.ShowAsync();
 	}
 
-	private void TestButton2Click(object sender, RoutedEventArgs e)
+	private void ThemeButton2Click(object sender, RoutedEventArgs e)
 	{
 		TestButton2TeachingTip.IsOpen = true;
+	}
+
+	private void GlobalRouteMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		ViewModel.IsBypassChinaMode = false;
+	}
+
+	private void BypassChinaMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		ViewModel.IsBypassChinaMode = true;
 	}
 
 	#endregion
@@ -556,8 +566,9 @@ public sealed partial class MainWindow : Window
 			return;
 		}
 
-		ApplyTheme(theme);
+		// 先更新 ViewModel 的主题，再应用到 UI（确保 UpdateThemeButtonsState 使用最新值）
 		ViewModel.ApplyTheme(theme);
+		ApplyTheme(theme);
 		TestButton2TeachingTip.IsOpen = false;
 	}
 
@@ -578,12 +589,24 @@ public sealed partial class MainWindow : Window
 			return;
 		}
 
+		// 获取当前实际显示的主题（即使选择了Default，ActualTheme也会是Light或Dark）
+		var actualTheme = Content is FrameworkElement root ? root.ActualTheme : ElementTheme.Default;
+
 		foreach (var child in panel.Children)
 		{
 			if (child is Button themeButton && themeButton.Tag is string tag &&
 				Enum.TryParse<ElementTheme>(tag, true, out var theme))
 			{
-				themeButton.IsEnabled = theme != ViewModel.CurrentTheme;
+				if (theme == ElementTheme.Default)
+				{
+					// "跟随系统"按钮始终启用
+					themeButton.IsEnabled = true;
+				}
+				else
+				{
+					// "浅色"和"深色"按钮：根据实际显示的主题来禁用对应按钮
+					themeButton.IsEnabled = theme != actualTheme;
+				}
 			}
 		}
 	}

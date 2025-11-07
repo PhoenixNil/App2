@@ -27,7 +27,10 @@ public class ConfigWriter
     /// <summary>
     /// 根据服务器配置生成 sslocal 配置文件
     /// </summary>
-    public void WriteConfig(ServerEntry server, int localPort = 1080)
+    /// <param name="server">服务器配置</param>
+    /// <param name="localPort">本地端口</param>
+    /// <param name="aclPath">ACL 文件路径（可选）</param>
+    public void WriteConfig(ServerEntry server, int localPort = 1080, string? aclPath = null)
     {
         var config = new SSConfig
         {
@@ -37,7 +40,8 @@ public class ConfigWriter
             Method = server.Method,
             LocalAddress = "127.0.0.1",
             LocalPort = localPort,
-            Timeout = 300
+            Timeout = 300,
+            ACL = aclPath
         };
 
         var json = JsonSerializer.Serialize(config, JsonContext.Default.SSConfig);

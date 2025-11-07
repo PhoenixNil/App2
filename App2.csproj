@@ -78,6 +78,11 @@
       <!-- dotnet publish 需要 -->
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </None>
+    <None Include="shadowsocks.acl">
+      <!-- ACL 文件：用于全局模式的直连规则 -->
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

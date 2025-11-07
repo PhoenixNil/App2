@@ -27,4 +27,8 @@ public class SSConfig
 
     [JsonPropertyName("timeout")]
     public int Timeout { get; set; } = 300;
+
+    [JsonPropertyName("acl")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ACL { get; set; }
 }

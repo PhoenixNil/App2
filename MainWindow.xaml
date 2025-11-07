@@ -401,6 +401,28 @@
                                            FontWeight="SemiBold"
                                            Text="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
                             </StackPanel>
+
+                            <!-- Route Mode Badge (only visible in Global mode) -->
+
+
+                            <Border 
+                                    Padding="8,4"
+                                    Visibility="{x:Bind ViewModel.IsRouteModeBadgeVisible, Mode=OneWay}"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="4">
+                                    <FontIcon Glyph="{x:Bind ViewModel.RouteModeBadgeIcon, Mode=OneWay}"
+                                              FontSize="12"
+                                              Foreground="{x:Bind ViewModel.RouteModeBadgeForeground, Mode=OneWay}"
+                                              VerticalAlignment="Center" />
+                                    <TextBlock Text="{x:Bind ViewModel.RouteModeBadgeText, Mode=OneWay}"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
+                                               Foreground="{x:Bind ViewModel.RouteModeBadgeForeground, Mode=OneWay}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+
                             <Button Background="Transparent"
                                     BorderBrush="Transparent"
                                     VerticalAlignment="Center"
@@ -417,7 +439,16 @@
                                         <MenuFlyoutItem Text="查看日志"
                                                         Click="ViewLogsMenuItem_Click" />
                                         <MenuFlyoutItem Text="设置主题"
-                                                        Click="TestButton2Click" />
+                                                        Click="ThemeButton2Click" />
+                                        <MenuFlyoutSubItem Text="路由设置"
+
+                                                           IsEnabled="{x:Bind ViewModel.CanEditRouteSettings, Mode=OneWay}">
+                                            <MenuFlyoutItem Text="全局路由"                                                                
+                                                                 Click="GlobalRouteMenuItem_Click" />
+                                            <MenuFlyoutItem Text="绕过大陆"
+                                                                 Click="BypassChinaMenuItem_Click" />
+                                        </MenuFlyoutSubItem>
+
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
@@ -486,9 +517,7 @@
                                         VerticalAlignment="Center"
                                         Spacing="16">
 
-                                <Border 
-                                        
-                                        Padding="12,8">
+                                <Border Padding="12,8">
                                     <StackPanel Orientation="Horizontal"
                                                 Spacing="2">
                                         <TextBlock Text="本地端口："
@@ -499,7 +528,6 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
-
                             <!-- 右侧：模式切换 -->
                             <StackPanel Grid.Column="2"
                                         Orientation="Horizontal"
@@ -511,8 +539,9 @@
                                            FontWeight="SemiBold"
                                            Margin="0,0,4,0" />
                                 <ComboBox SelectedIndex="{x:Bind ViewModel.ProxyModeIndex, Mode=TwoWay}"
+                                          IsEnabled="{x:Bind ViewModel.CanChangeProxyMode, Mode=OneWay}"
                                           MinWidth="100">
-                                    <x:String>全局模式</x:String>
+                                    <x:String>全局代理</x:String>
                                     <x:String>PAC模式</x:String>
                                     <x:String>直连模式</x:String>
                                 </ComboBox>

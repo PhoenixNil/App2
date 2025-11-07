@@ -1,4 +1,4 @@
-using App2.Models;
+ï»¿using App2.Models;
 using App2.Services;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -28,7 +28,7 @@ public class MainWindowViewModel : ViewModelBase
 	private readonly ConfigStorage _configStorage;
 	private readonly LatencyTestService _latencyTestService;
 	private readonly PACServerService _pacServerService;
-	
+
 	private DispatcherQueue? _dispatcherQueue;
 
 	private ServerEntry? _selectedServer;
@@ -40,6 +40,9 @@ public class MainWindowViewModel : ViewModelBase
 	private ElementTheme _currentTheme = ElementTheme.Default;
 	private readonly Queue<string> _logEntries = new();
 	private CancellationTokenSource? _latencyTestCancellation;
+	private bool _isBypassChinaMode = true; // true = ç»•è¿‡å¤§é™†(ä½¿ç”¨ACL), false = å…¨å±€è·¯ç”±(ä¸ç”¨ACL)
+	private Brush _routeModeBadgeForeground = null!;
+	private Brush _routeModeBadgeBackground = null!;
 
 	private const int DefaultLocalPort = 10808;
 	private const int MinimumLocalPort = 1024;
@@ -52,7 +55,7 @@ public class MainWindowViewModel : ViewModelBase
 
 	public ObservableCollection<ServerEntry> Servers { get; } = new();
 
-	private string _statusText = "×´Ì¬£ºÎ´Æô¶¯";
+	private string _statusText = "çŠ¶æ€ï¼šæœªè¿è¡Œ";
 	public string StatusText
 	{
 		get => _statusText;
@@ -74,34 +77,34 @@ public class MainWindowViewModel : ViewModelBase
 			if (SetProperty(ref _selectedServer, value))
 			{
 				OnSelectedServerChanged();
-				// Í¨Öª²âÊÔÑÓ³ÙÃüÁîÖØĞÂÆÀ¹À CanExecute
+				// é€šçŸ¥å»¶è¿Ÿæµ‹è¯•å‘½ä»¤çš„ CanExecute å˜åŒ–
 				(TestLatencyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
 			}
 		}
 	}
 
-	private string _selectedName = "Î´Ñ¡Ôñ";
+	private string _selectedName = "æœªé€‰æ‹©";
 	public string SelectedName
 	{
 		get => _selectedName;
 		set => SetProperty(ref _selectedName, value);
 	}
 
-	private string _selectedHost = "Î´Ñ¡Ôñ";
+	private string _selectedHost = "æœªé€‰æ‹©";
 	public string SelectedHost
 	{
 		get => _selectedHost;
 		set => SetProperty(ref _selectedHost, value);
 	}
 
-	private string _selectedPort = "Î´Ñ¡Ôñ";
+	private string _selectedPort = "æœªé€‰æ‹©";
 	public string SelectedPort
 	{
 		get => _selectedPort;
 		set => SetProperty(ref _selectedPort, value);
 	}
 
-	private string _selectedMethod = "Î´Ñ¡Ôñ";
+	private string _selectedMethod = "æœªé€‰æ‹©";
 	public string SelectedMethod
 	{
 		get => _selectedMethod;
@@ -129,7 +132,7 @@ public class MainWindowViewModel : ViewModelBase
 		set => SetProperty(ref _localPortText, value);
 	}
 
-	private string _startStopButtonContent = "Æô¶¯";
+	private string _startStopButtonContent = "å¯åŠ¨";
 	public string StartStopButtonContent
 	{
 		get => _startStopButtonContent;
@@ -177,11 +180,52 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			if (SetProperty(ref _canTestLatency, value))
 			{
-				// Í¨ÖªÃüÁîÖØĞÂÆÀ¹À CanExecute
+				// é€šçŸ¥å»¶è¿Ÿæµ‹è¯•å‘½ä»¤çš„ CanExecute å˜åŒ–
 				(TestLatencyCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
 			}
 		}
 	}
+
+	public bool CanEditRouteSettings => !IsRunning;
+
+	public bool IsBypassChinaMode
+	{
+		get => _isBypassChinaMode;
+		set
+		{
+			if (SetProperty(ref _isBypassChinaMode, value))
+			{
+				OnPropertyChanged(nameof(IsGlobalRouteMode));
+				// Update route mode badge display
+				OnPropertyChanged(nameof(RouteModeBadgeText));
+				OnPropertyChanged(nameof(RouteModeBadgeIcon));
+				UpdateRouteModeBrushes();
+			}
+		}
+	}
+
+	public bool IsGlobalRouteMode => !_isBypassChinaMode;
+
+	// Route mode badge display properties
+	public string RouteModeBadgeText => _isBypassChinaMode ? "ç»•è¿‡å¤§é™†" : "å…¨å±€è·¯ç”±";
+
+	public string RouteModeBadgeIcon => _isBypassChinaMode ? "\uE72E" : "\uE774"; // Shield : Globe
+
+	public bool IsRouteModeBadgeVisible => _currentProxyMode == ProxyMode.Global;
+
+	public Brush RouteModeBadgeForeground
+	{
+		get => _routeModeBadgeForeground;
+		private set => SetProperty(ref _routeModeBadgeForeground, value);
+	}
+
+	public Brush RouteModeBadgeBackground
+	{
+		get => _routeModeBadgeBackground;
+		private set => SetProperty(ref _routeModeBadgeBackground, value);
+	}
+
+	public bool CanChangeProxyMode => !IsRunning;
 
 	private int _proxyModeIndex = 1; // PAC mode by default
 	public int ProxyModeIndex
@@ -240,6 +284,7 @@ public class MainWindowViewModel : ViewModelBase
 		// Initialize brushes
 		_statusIconForeground = new SolidColorBrush(Colors.Red);
 		_latencyForeground = new SolidColorBrush(Colors.Gray);
+		UpdateRouteModeBrushes();
 
 		LoadServers();
 		Servers.CollectionChanged += Servers_CollectionChanged;
@@ -359,7 +404,7 @@ public class MainWindowViewModel : ViewModelBase
 
 		return new ServerEntry
 		{
-			Name = string.IsNullOrWhiteSpace(name) ? "Î´ÃüÃû½Úµã" : name.Trim(),
+			Name = string.IsNullOrWhiteSpace(name) ? "æœªå‘½åèŠ‚ç‚¹" : name.Trim(),
 			Host = host.Trim(),
 			Port = portValue,
 			Password = password.Trim(),
@@ -421,14 +466,14 @@ public class MainWindowViewModel : ViewModelBase
 
 		if (double.IsNaN(value))
 		{
-			errorMessage = "ÇëÊäÈëÓĞĞ§µÄ¶Ë¿ÚºÅ¡£";
+			errorMessage = "è¯·è¾“å…¥æœ‰æ•ˆçš„ç«¯å£å·ã€‚";
 			return false;
 		}
 
 		var newPort = (int)Math.Round(value);
 		if (newPort < MinimumLocalPort || newPort > MaximumLocalPort)
 		{
-			errorMessage = $"¶Ë¿ÚºÅ±ØĞëÔÚ {MinimumLocalPort} ÖÁ {MaximumLocalPort} Ö®¼ä¡£";
+			errorMessage = $"ç«¯å£å·å¿…é¡»åœ¨ {MinimumLocalPort} åˆ° {MaximumLocalPort} ä¹‹é—´ã€‚";
 			return false;
 		}
 
@@ -446,7 +491,7 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		return _logEntries.Count > 0
 			? string.Join(Environment.NewLine, _logEntries)
-			: "ÔİÎŞÈÕÖ¾¼ÇÂ¼¡£";
+			: "æš‚æ— æ—¥å¿—è®°å½•";
 	}
 
 	public bool HasLogs => _logEntries.Count > 0;
@@ -472,7 +517,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"¼ÓÔØ·şÎñÆ÷ÁĞ±íÊ§°Ü: {ex.Message}");
+			Debug.WriteLine($"åŠ è½½æœåŠ¡å™¨åˆ—è¡¨å¤±è´¥: {ex.Message}");
 		}
 	}
 
@@ -484,7 +529,7 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"±£´æ·şÎñÆ÷ÁĞ±íÊ§°Ü: {ex.Message}");
+			Debug.WriteLine($"ä¿å­˜æœåŠ¡å™¨åˆ—è¡¨å¤±è´¥: {ex.Message}");
 		}
 	}
 
@@ -520,10 +565,10 @@ public class MainWindowViewModel : ViewModelBase
 	{
 		if (server == null)
 		{
-			SelectedName = "Î´Ñ¡Ôñ";
-			SelectedHost = "Î´Ñ¡Ôñ";
-			SelectedPort = "Î´Ñ¡Ôñ";
-			SelectedMethod = "Î´Ñ¡Ôñ";
+			SelectedName = "æœªé€‰æ‹©";
+			SelectedHost = "æœªé€‰æ‹©";
+			SelectedPort = "æœªé€‰æ‹©";
+			SelectedMethod = "æœªé€‰æ‹©";
 			LatencyText = "--";
 			LatencyForeground = new SolidColorBrush(Colors.Gray);
 			return;
@@ -533,7 +578,7 @@ public class MainWindowViewModel : ViewModelBase
 		SelectedHost = server.Host;
 		SelectedPort = server.Port.ToString();
 		SelectedMethod = server.Method;
-		LatencyText = "²âÊÔÖĞ...";
+		LatencyText = "æµ‹è¯•ä¸­...";
 		LatencyForeground = new SolidColorBrush(Colors.Gray);
 	}
 
@@ -568,10 +613,10 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"ÑÓ³Ù²âÊÔÊ§°Ü: {ex.Message}");
+			Debug.WriteLine($"å»¶è¿Ÿæµ‹è¯•å¤±è´¥: {ex.Message}");
 			if (_selectedServer == server)
 			{
-				LatencyText = "²âÊÔÊ§°Ü";
+				LatencyText = "æµ‹è¯•å¤±è´¥";
 				LatencyForeground = new SolidColorBrush(Colors.Red);
 			}
 		}
@@ -614,7 +659,7 @@ public class MainWindowViewModel : ViewModelBase
 
 			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
 			{
-				StatusText = "×´Ì¬£ºÔËĞĞÖĞ";
+				StatusText = "çŠ¶æ€ï¼šå·²è¿è¡Œ";
 				StatusIconForeground = new SolidColorBrush(Colors.Green);
 			}
 		});
@@ -663,17 +708,36 @@ public class MainWindowViewModel : ViewModelBase
 				}
 				catch (Exception ex)
 				{
-					Debug.WriteLine($"Æô¶¯ PAC ·şÎñÆ÷Ê§°Ü: {ex.Message}");
+					Debug.WriteLine($"å¯åŠ¨ PAC æœåŠ¡å™¨å¤±è´¥: {ex.Message}");
 				}
 			}
-			
+
 			_proxyService.SetProxyMode(_currentProxyMode);
 		}
+
+		// Update route mode badge visibility
+		OnPropertyChanged(nameof(IsRouteModeBadgeVisible));
 	}
 
 	private void UpdateCommandStates()
 	{
 		OnPropertyChanged(nameof(IsRunning));
+		OnPropertyChanged(nameof(CanEditRouteSettings));
+		OnPropertyChanged(nameof(CanChangeProxyMode));
+	}
+
+	private void UpdateRouteModeBrushes()
+	{
+		if (_isBypassChinaMode)
+		{
+			RouteModeBadgeForeground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 30, 144, 255));    // DodgerBlue #1E90FF
+			RouteModeBadgeBackground = new SolidColorBrush(Windows.UI.Color.FromArgb(32, 30, 144, 255));     // DodgerBlue with alpha
+		}
+		else
+		{
+			RouteModeBadgeForeground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 140, 0));    // DarkOrange #FF8C00
+			RouteModeBadgeBackground = new SolidColorBrush(Windows.UI.Color.FromArgb(32, 255, 140, 0));     // DarkOrange with alpha
+		}
 	}
 
 	#endregion
@@ -709,29 +773,41 @@ public class MainWindowViewModel : ViewModelBase
 
 		try
 		{
-			_configWriter.WriteConfig(_selectedServer, _localPort);
+			// Only enable ACL in Global mode with Bypass China route setting
+			string? aclPath = null;
+			if (_currentProxyMode == ProxyMode.Global && _isBypassChinaMode)
+			{
+				var exeDir = AppContext.BaseDirectory;
+				var aclFile = Path.Combine(exeDir, "shadowsocks.acl");
+				if (File.Exists(aclFile))
+				{
+					aclPath = aclFile;
+				}
+			}
+
+			_configWriter.WriteConfig(_selectedServer, _localPort, aclPath);
 			var configPath = _configWriter.GetConfigPath();
 			if (!File.Exists(configPath))
 			{
-				throw new InvalidOperationException($"ÅäÖÃÎÄ¼şÉú³ÉÊ§°Ü: {configPath}");
+				throw new InvalidOperationException($"é…ç½®æ–‡ä»¶åˆ›å»ºå¤±è´¥: {configPath}");
 			}
 
 			_engineService.Start(configPath);
-			
+
 			// Start PAC server if in PAC mode
 			if (_currentProxyMode == ProxyMode.PAC)
 			{
 				await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
 				_proxyService.SetPACUrl(_pacServerService.PACUrl);
 			}
-			
+
 			_proxyService.SetProxyServer("127.0.0.1", _localPort);
 			_proxyService.SetProxyMode(_currentProxyMode);
 
 			IsRunning = true;
-			StartStopButtonContent = "Í£Ö¹";
+			StartStopButtonContent = "åœæ­¢";
 			StartStopButtonChecked = true;
-			StatusText = "×´Ì¬£ºÔËĞĞÖĞ";
+			StatusText = "çŠ¶æ€ï¼šå·²è¿è¡Œ";
 			StatusIconForeground = new SolidColorBrush(Colors.Green);
 
 			if (_activeServer != null)
@@ -749,7 +825,7 @@ public class MainWindowViewModel : ViewModelBase
 		{
 			IsRunning = false;
 			StartStopButtonChecked = false;
-			StatusText = $"Æô¶¯Ê§°Ü: {ex.Message}";
+			StatusText = $"å¯åŠ¨å¤±è´¥: {ex.Message}";
 
 			throw; // Re-throw to let View handle the error dialog
 		}
@@ -765,14 +841,14 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
-			Debug.WriteLine($"Í£Ö¹ÒıÇæÊ§°Ü: {ex.Message}");
+			Debug.WriteLine($"åœæ­¢å¤±è´¥: {ex.Message}");
 		}
 		finally
 		{
 			IsRunning = false;
-			StartStopButtonContent = "Æô¶¯";
+			StartStopButtonContent = "å¯åŠ¨";
 			StartStopButtonChecked = false;
-			StatusText = "×´Ì¬£ºÒÑÍ£Ö¹";
+			StatusText = "çŠ¶æ€ï¼šæœªè¿è¡Œ";
 			StatusIconForeground = new SolidColorBrush(Colors.Red);
 			_configWriter.DeleteConfig();
 
