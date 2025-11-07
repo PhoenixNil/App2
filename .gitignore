@@ -58,3 +58,5 @@ project.fragment.lock.json
 # Logs
 *.log
 /Properties/PublishProfiles/FolderProfile.pubxml
+*.md
+*.markdown
