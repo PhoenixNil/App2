@@ -1,7 +1,8 @@
 # Shadowsocks WinUI 3 客户端 / Shadowsocks WinUI 3 Client
 
 一个基于 WinUI 3 现代化 Shadowsocks Windows 客户端，提供简洁优雅的用户界面。
-
+![1762515836660.png](https://youke1.picui.cn/s1/2025/11/07/690ddbf6ad03e.png)
+![1762515975040.png](https://youke1.picui.cn/s1/2025/11/07/690ddbf7050e4.png)
 
 ## ✨ Features
 
