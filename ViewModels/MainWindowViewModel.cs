@@ -657,7 +657,7 @@ public class MainWindowViewModel : ViewModelBase
 				_logEntries.Dequeue();
 			}
 
-			if (log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
+			if (_isRunning && log.Contains("listening on", StringComparison.OrdinalIgnoreCase))
 			{
 				StatusText = "状态：已运行";
 				StatusIconForeground = new SolidColorBrush(Colors.Green);
@@ -823,9 +823,36 @@ public class MainWindowViewModel : ViewModelBase
 		}
 		catch (Exception ex)
 		{
+			Debug.WriteLine($"启动失败: {ex.Message}");
+
+			try
+			{
+				if (_engineService.IsRunning)
+				{
+					_engineService.Stop();
+				}
+			}
+			catch (Exception stopEx)
+			{
+				Debug.WriteLine($"启动失败后停止引擎失败: {stopEx.Message}");
+			}
+
+			try
+			{
+				await _pacServerService.StopAsync();
+			}
+			catch (Exception pacEx)
+			{
+				Debug.WriteLine($"启动失败后停止 PAC 服务器失败: {pacEx.Message}");
+			}
+
+			_proxyService.ClearProxy();
+
 			IsRunning = false;
+			StartStopButtonContent = "启动";
 			StartStopButtonChecked = false;
 			StatusText = $"启动失败: {ex.Message}";
+			StatusIconForeground = new SolidColorBrush(Colors.Red);
 
 			throw; // Re-throw to let View handle the error dialog
 		}

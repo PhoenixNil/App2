@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="App2.Views.ServerDetailControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewmodels="using:App2.ViewModels"
+             mc:Ignorable="d"
+             d:DesignWidth="500"
+             d:DesignHeight="600">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="服务器详情"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,16" />
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Margin="0,0,0,12">
+            <StackPanel Orientation="Vertical"
+                        Spacing="8"
+                        Padding="0,0,12,80">
+
+                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="16"
+                        Padding="20">
+                    <StackPanel Orientation="Vertical"
+                                Spacing="12">
+
+                        <Grid x:Name="InfoGrid"
+                              ColumnSpacing="12"
+                              RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal"
+                                        Grid.Row="0"
+                                        Grid.Column="0"
+                                        Spacing="8">
+                                <SymbolIcon Symbol="Contact" />
+                                <TextBlock Text="名称"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="0"
+                                       Grid.Column="1"
+                                       Text="{x:Bind ViewModel.SelectedName, Mode=OneWay}"
+                                       FontSize="16"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        Grid.Row="1"
+                                        Grid.Column="0"
+                                        Spacing="8">
+                                <FontIcon Foreground="{ThemeResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                                          Glyph="&#xE774;" />
+                                <TextBlock Text="地址"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="1"
+                                       Grid.Column="1"
+                                       Text="{x:Bind ViewModel.SelectedHost, Mode=OneWay}"
+                                       FontSize="16"
+                                       TextWrapping="WrapWholeWords" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        Grid.Row="2"
+                                        Grid.Column="0"
+                                        Spacing="8">
+                                <FontIcon Foreground="#73d3ff" Glyph="&#xE95F;" />
+                                <TextBlock Text="端口"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="2"
+                                       Grid.Column="1"
+                                       Text="{x:Bind ViewModel.SelectedPort, Mode=OneWay}"
+                                       FontSize="16" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        Grid.Row="3"
+                                        Grid.Column="0"
+                                        Spacing="8">
+                                <FontIcon Foreground="#ffb347" Glyph="&#xE8D7;" />
+                                <TextBlock Text="加密"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock Grid.Row="3"
+                                       Grid.Column="1"
+                                       Text="{x:Bind ViewModel.SelectedMethod, Mode=OneWay}"
+                                       FontSize="16" />
+                        </Grid>
+
+                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="16">
+                            <Grid ColumnDefinitions="*,Auto,Auto"
+                                  ColumnSpacing="12"
+                                  VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal"
+                                            Spacing="6">
+                                    <FontIcon Glyph="&#xE9D9;"
+                                              Foreground="#A67CA8"
+                                              VerticalAlignment="Center" />
+                                    <TextBlock Text="网络延迟"
+                                               FontSize="13"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind ViewModel.LatencyText, Mode=OneWay}"
+                                           Foreground="{x:Bind ViewModel.LatencyForeground, Mode=OneWay}"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0" />
+
+                                <Button Grid.Column="2"
+                                        Command="{x:Bind ViewModel.TestLatencyCommand}"
+                                        Background="Transparent"
+                                        BorderBrush="Transparent"
+                                        Padding="8"
+                                        ToolTipService.ToolTip="重新测试延迟"
+                                        VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE72C;"
+                                              FontSize="14" />
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
