@@ -19,17 +19,15 @@
                         Orientation="Horizontal"
                         VerticalAlignment="Center"
                         Spacing="12">
-                <ToggleButton x:Name="BtnStartStop"
-                              MinWidth="96"
+                <ToggleButton MinWidth="96"
                               Content="{x:Bind ViewModel.StartStopButtonContent, Mode=OneWay}"
                               IsChecked="{x:Bind ViewModel.StartStopButtonChecked, Mode=OneWay}"
-                              Click="StartStopButton_Click" />
+                              Command="{x:Bind ViewModel.StartStopCommand}" />
                 <StackPanel Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Spacing="8">
                     <FontIcon Glyph="&#xECCC;"
-                              x:Name="IconStatus"
-                              Foreground="{x:Bind ViewModel.StatusIconForeground, Mode=OneWay}" />
+                              Foreground="{x:Bind ViewModel.StatusIconColor, Mode=OneWay, Converter={StaticResource ColorToBrushConverter}}" />
                     <TextBlock x:Name="TxtStatus"
                                VerticalAlignment="Center"
                                FontWeight="SemiBold"
@@ -37,18 +35,19 @@
                 </StackPanel>
 
                 <Border Padding="8,4"
-                        Visibility="{x:Bind ViewModel.IsRouteModeBadgeVisible, Mode=OneWay}"
+                        Background="{x:Bind ViewModel.RouteModeBadgeBackgroundColor, Mode=OneWay, Converter={StaticResource ColorToBrushConverter}}"
+                        Visibility="{x:Bind ViewModel.IsRouteModeBadgeVisible, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                         VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal"
                                 Spacing="4">
                         <FontIcon Glyph="{x:Bind ViewModel.RouteModeBadgeIcon, Mode=OneWay}"
                                   FontSize="12"
-                                  Foreground="{x:Bind ViewModel.RouteModeBadgeForeground, Mode=OneWay}"
+                                  Foreground="{x:Bind ViewModel.RouteModeBadgeForegroundColor, Mode=OneWay, Converter={StaticResource ColorToBrushConverter}}"
                                   VerticalAlignment="Center" />
                         <TextBlock Text="{x:Bind ViewModel.RouteModeBadgeText, Mode=OneWay}"
                                    FontSize="12"
                                    FontWeight="SemiBold"
-                                   Foreground="{x:Bind ViewModel.RouteModeBadgeForeground, Mode=OneWay}"
+                                   Foreground="{x:Bind ViewModel.RouteModeBadgeForegroundColor, Mode=OneWay, Converter={StaticResource ColorToBrushConverter}}"
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Border>
@@ -63,17 +62,19 @@
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="编辑本地端口"
-                                            Click="EditLocalPortMenuItem_Click" />
+                                            Command="{x:Bind ViewModel.EditLocalPortCommand}" />
                             <MenuFlyoutItem Text="查看日志"
-                                            Click="ViewLogsMenuItem_Click" />
+                                            Command="{x:Bind ViewModel.ViewLogsCommand}" />
                             <MenuFlyoutItem Text="设置主题"
-                                            Click="ThemeButton2Click" />
+                                            Command="{x:Bind ViewModel.ToggleThemePickerCommand}" />
                             <MenuFlyoutSubItem Text="路由设置"
                                                IsEnabled="{x:Bind ViewModel.CanEditRouteSettings, Mode=OneWay}">
                                 <MenuFlyoutItem Text="全局路由"
-                                                Click="GlobalRouteMenuItem_Click" />
+                                                Command="{x:Bind ViewModel.ChangeRouteModeCommand}"
+                                                CommandParameter="{x:Bind ViewModel.FalseValue, Mode=OneWay}" />
                                 <MenuFlyoutItem Text="绕过大陆"
-                                                Click="BypassChinaMenuItem_Click" />
+                                                Command="{x:Bind ViewModel.ChangeRouteModeCommand}"
+                                                CommandParameter="{x:Bind ViewModel.TrueValue, Mode=OneWay}" />
                             </MenuFlyoutSubItem>
                         </MenuFlyout>
                     </Button.Flyout>
@@ -82,15 +83,16 @@
 
             <TeachingTip Title="色彩模式"
                          PreferredPlacement="Auto"
-                         x:Name="TestButton2TeachingTip"
+                         IsOpen="{x:Bind ViewModel.IsThemePickerOpen, Mode=TwoWay}"
                          PlacementMargin="20">
                 <TeachingTip.Content>
                     <StackPanel Orientation="Horizontal"
                                 Spacing="10">
                         <Button MinWidth="70"
                                 Padding="12,8"
-                                Tag="Light"
-                                Click="ThemeButton_Click">
+                                Command="{x:Bind ViewModel.ChangeThemeCommand}"
+                                CommandParameter="{x:Bind ViewModel.LightTheme, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.IsLightThemeEnabled, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal"
                                         Spacing="6">
                                 <FontIcon Glyph="&#xE706;"
@@ -101,8 +103,9 @@
                         </Button>
                         <Button MinWidth="70"
                                 Padding="12,8"
-                                Tag="Dark"
-                                Click="ThemeButton_Click">
+                                Command="{x:Bind ViewModel.ChangeThemeCommand}"
+                                CommandParameter="{x:Bind ViewModel.DarkTheme, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.IsDarkThemeEnabled, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal"
                                         Spacing="6">
                                 <FontIcon Glyph="&#xE708;"
@@ -113,8 +116,9 @@
                         </Button>
                         <Button MinWidth="70"
                                 Padding="12,8"
-                                Tag="Default"
-                                Click="ThemeButton_Click">
+                                Command="{x:Bind ViewModel.ChangeThemeCommand}"
+                                CommandParameter="{x:Bind ViewModel.DefaultTheme, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.IsDefaultThemeEnabled, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal"
                                         Spacing="6">
                                 <FontIcon Glyph="&#xE770;"

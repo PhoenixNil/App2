@@ -6,18 +6,17 @@ namespace App2.Views;
 
 public sealed partial class ServerDetailControl : UserControl
 {
-    public ServerDetailControl()
-    {
-        InitializeComponent();
-    }
+	public ServerDetailControl()
+	{
+		InitializeComponent();
+	}
 
-    public MainWindowViewModel? ViewModel
-    {
-        get => (MainWindowViewModel?)GetValue(ViewModelProperty);
-        set => SetValue(ViewModelProperty, value);
-    }
+	public ServerDetailViewModel? ViewModel
+	{
+		get => (ServerDetailViewModel?)GetValue(ViewModelProperty);
+		set => SetValue(ViewModelProperty, value);
+	}
 
-    public static readonly DependencyProperty ViewModelProperty =
-        DependencyProperty.Register(nameof(ViewModel), typeof(MainWindowViewModel),
-            typeof(ServerDetailControl), new PropertyMetadata(null));
+	public static readonly DependencyProperty ViewModelProperty =
+		DependencyProperty.Register(nameof(ViewModel), typeof(ServerDetailViewModel), typeof(ServerDetailControl), new PropertyMetadata(null));
 }

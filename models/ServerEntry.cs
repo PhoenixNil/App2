@@ -1,4 +1,3 @@
-using Microsoft.UI.Xaml;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -22,12 +21,9 @@ public class ServerEntry : INotifyPropertyChanged
 			{
 				_isActive = value;
 				OnPropertyChanged();
-				OnPropertyChanged(nameof(IsActiveVisibility));
 			}
 		}
 	}
-
-	public Visibility IsActiveVisibility => IsActive ? Visibility.Visible : Visibility.Collapsed;
 
 	public event PropertyChangedEventHandler? PropertyChanged;
 

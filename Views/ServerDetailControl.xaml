@@ -75,9 +75,9 @@
                                 <TextBlock Text="地址"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
-                            <TextBlock Grid.Row="1"
-                                       Grid.Column="1"
-                                       Text="{x:Bind ViewModel.SelectedHost, Mode=OneWay}"
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="1"
+                                           Text="{x:Bind ViewModel.SelectedHost, Mode=OneWay}"
                                        FontSize="16"
                                        TextWrapping="WrapWholeWords" />
 
@@ -89,9 +89,9 @@
                                 <TextBlock Text="端口"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="1"
-                                       Text="{x:Bind ViewModel.SelectedPort, Mode=OneWay}"
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="1"
+                                           Text="{x:Bind ViewModel.SelectedPort, Mode=OneWay}"
                                        FontSize="16" />
 
                             <StackPanel Orientation="Horizontal"
@@ -102,9 +102,9 @@
                                 <TextBlock Text="加密"
                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
-                            <TextBlock Grid.Row="3"
-                                       Grid.Column="1"
-                                       Text="{x:Bind ViewModel.SelectedMethod, Mode=OneWay}"
+                                <TextBlock Grid.Row="3"
+                                           Grid.Column="1"
+                                           Text="{x:Bind ViewModel.SelectedMethod, Mode=OneWay}"
                                        FontSize="16" />
                         </Grid>
 
@@ -129,7 +129,7 @@
 
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind ViewModel.LatencyText, Mode=OneWay}"
-                                           Foreground="{x:Bind ViewModel.LatencyForeground, Mode=OneWay}"
+                                           Foreground="{x:Bind ViewModel.LatencyColor, Mode=OneWay, Converter={StaticResource ColorToBrushConverter}}"
                                            FontSize="20"
                                            FontWeight="SemiBold"
                                            VerticalAlignment="Center"

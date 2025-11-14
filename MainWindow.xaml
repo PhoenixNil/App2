@@ -38,7 +38,7 @@
             </Grid.ColumnDefinitions>
 
             <views:ServerListControl Grid.Column="0"
-                                      ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+                                      ViewModel="{x:Bind ViewModel.ServerList, Mode=OneWay}" />
 
             <Grid Grid.Column="1"
                   VerticalAlignment="Stretch">
@@ -48,11 +48,11 @@
                 </Grid.RowDefinitions>
 
                 <views:ServerDetailControl Grid.Row="0"
-                                            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+                                            ViewModel="{x:Bind ViewModel.ServerDetail, Mode=OneWay}" />
 
                 <views:ControlPanelControl x:Name="ControlPanel"
                                             Grid.Row="1"
-                                            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+                                            ViewModel="{x:Bind ViewModel.ControlPanel, Mode=OneWay}" />
             </Grid>
         </Grid>
     </Grid>

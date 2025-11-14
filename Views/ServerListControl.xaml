@@ -32,14 +32,14 @@
                     <DropDownButton.Flyout>
                         <MenuFlyout Placement="BottomEdgeAlignedLeft">
                             <MenuFlyoutItem Text="从SS链接导入"
-                                            Click="BtnImportSS_Click"
+                                            Command="{x:Bind ViewModel.ImportFromLinkCommand}"
                                             FontWeight="Normal">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE77F;" />
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                             <MenuFlyoutItem Text="手动添加新服务器"
-                                            Click="BtnAddManual_Click"
+                                            Command="{x:Bind ViewModel.AddManualCommand}"
                                             FontWeight="Normal">
                                 <MenuFlyoutItem.Icon>
                                     <FontIcon Glyph="&#xE710;" />
@@ -49,7 +49,7 @@
                     </DropDownButton.Flyout>
                 </DropDownButton>
                 <Button x:Name="BtnEdit"
-                        Click="BtnEdit_Click"
+                        Command="{x:Bind ViewModel.EditServerCommand}"
                         IsEnabled="{x:Bind ViewModel.CanEditServer, Mode=OneWay}"
                         Padding="12,6">
                     <StackPanel Orientation="Horizontal">
@@ -60,7 +60,7 @@
                 </Button>
 
                 <Button x:Name="BtnRemove"
-                        Click="BtnRemove_Click"
+                        Command="{x:Bind ViewModel.RemoveServerCommand}"
                         IsEnabled="{x:Bind ViewModel.CanRemoveServer, Mode=OneWay}"
                         Padding="12,6">
                     <StackPanel Orientation="Horizontal">
@@ -118,7 +118,7 @@
                             <Border Background="{ThemeResource SystemFillColorSuccessBrush}"
                                     CornerRadius="4"
                                     Padding="6,2"
-                                    Visibility="{x:Bind IsActive, Mode=OneWay}"
+                                    Visibility="{x:Bind IsActive, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"
                                     Grid.Column="1"
                                     Margin="8,0,0,0">
                                 <TextBlock Text="● Activated"

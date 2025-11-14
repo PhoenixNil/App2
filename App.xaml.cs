@@ -1,50 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using App2.Services;
+using App2.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+namespace App2;
 
-namespace App2
+public partial class App : Application
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    public partial class App : Application
-    {
-        private Window? _window;
+	private Window? _window;
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            InitializeComponent();
-        }
+	public App()
+	{
+		InitializeComponent();
+		Services = ConfigureServices();
+	}
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
-        {
-            _window = new MainWindow();
-            _window.Activate();
-        }
-    }
+	public IServiceProvider Services { get; }
+
+	protected override void OnLaunched(LaunchActivatedEventArgs args)
+	{
+		_window = Services.GetRequiredService<MainWindow>();
+		var windowContext = Services.GetRequiredService<IWindowContext>();
+		windowContext.Attach(_window);
+		var themeService = Services.GetRequiredService<IThemeService>();
+		themeService.ApplyTheme(themeService.CurrentTheme);
+		_window.Activate();
+	}
+
+	private static IServiceProvider ConfigureServices()
+	{
+		var services = new ServiceCollection();
+
+		services.AddSingleton<IWindowContext, WindowContext>();
+		services.AddSingleton<IClipboardService, ClipboardService>();
+		services.AddSingleton<IThemeService, ThemeService>();
+		services.AddSingleton<IDialogService>(provider => new DialogService(
+			provider.GetRequiredService<IWindowContext>(),
+			provider.GetRequiredService<IClipboardService>(),
+			provider.GetRequiredService<IThemeService>()));
+		services.AddSingleton<ConfigWriter>();
+		services.AddSingleton<EngineService>();
+		services.AddSingleton<ProxyService>();
+		services.AddSingleton(provider => new PACServerService(7090));
+		services.AddSingleton<ConfigStorage>();
+		services.AddSingleton<LatencyTestService>();
+
+		services.AddSingleton<ServerListViewModel>();
+		services.AddSingleton(provider => new ControlPanelViewModel(
+			provider.GetRequiredService<ConfigWriter>(),
+			provider.GetRequiredService<EngineService>(),
+			provider.GetRequiredService<ProxyService>(),
+			provider.GetRequiredService<PACServerService>(),
+			provider.GetRequiredService<IDialogService>(),
+			provider.GetRequiredService<IThemeService>(),
+			provider.GetRequiredService<ServerListViewModel>()));
+		services.AddSingleton(provider => new ServerDetailViewModel(
+			provider.GetRequiredService<ServerListViewModel>(),
+			provider.GetRequiredService<LatencyTestService>()));
+		services.AddSingleton<MainWindowViewModel>();
+		services.AddSingleton<MainWindow>();
+
+		return services.BuildServiceProvider();
+	}
 }
