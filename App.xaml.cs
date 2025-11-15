@@ -40,6 +40,7 @@ public partial class App : Application
 			provider.GetRequiredService<IClipboardService>(),
 			provider.GetRequiredService<IThemeService>()));
 		services.AddSingleton<ConfigWriter>();
+		services.AddSingleton<AutoStartService>();
 		services.AddSingleton<EngineService>();
 		services.AddSingleton<ProxyService>();
 		services.AddSingleton(provider => new PACServerService(7090));
@@ -54,6 +55,7 @@ public partial class App : Application
 			provider.GetRequiredService<PACServerService>(),
 			provider.GetRequiredService<IDialogService>(),
 			provider.GetRequiredService<IThemeService>(),
+			provider.GetRequiredService<AutoStartService>(),
 			provider.GetRequiredService<ServerListViewModel>()));
 		services.AddSingleton(provider => new ServerDetailViewModel(
 			provider.GetRequiredService<ServerListViewModel>(),

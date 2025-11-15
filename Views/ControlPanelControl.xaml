@@ -67,6 +67,8 @@
                                             Command="{x:Bind ViewModel.ViewLogsCommand}" />
                             <MenuFlyoutItem Text="设置主题"
                                             Command="{x:Bind ViewModel.ToggleThemePickerCommand}" />
+                            <ToggleMenuFlyoutItem Text="开机启动"
+                                                  IsChecked="{x:Bind ViewModel.IsAutoStartEnabled, Mode=TwoWay}"/>
                             <MenuFlyoutSubItem Text="路由设置"
                                                IsEnabled="{x:Bind ViewModel.CanEditRouteSettings, Mode=OneWay}">
                                 <MenuFlyoutItem Text="全局路由"
@@ -136,7 +138,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0"
@@ -155,7 +156,7 @@
                     </Border>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2"
+                <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"

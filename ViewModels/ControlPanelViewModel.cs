@@ -26,6 +26,7 @@ public partial class ControlPanelViewModel : ObservableObject
 	private readonly PACServerService _pacServerService;
 	private readonly IDialogService _dialogService;
 	private readonly IThemeService _themeService;
+	private readonly AutoStartService _autoStartService;
 	private readonly ServerListViewModel _serverList;
 	private readonly Queue<string> _logEntries = new();
 
@@ -43,6 +44,8 @@ public partial class ControlPanelViewModel : ObservableObject
 	private Color _routeBadgeForeground = Color.FromArgb(255, 30, 144, 255);
 	private Color _routeBadgeBackground = Color.FromArgb(32, 30, 144, 255);
 	private bool _isThemePickerOpen;
+	private bool _isAutoStartEnabled;
+	private bool _isAutoStartStateInternalUpdate;
 
 	public ControlPanelViewModel(
 		ConfigWriter configWriter,
@@ -51,6 +54,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		PACServerService pacServerService,
 		IDialogService dialogService,
 		IThemeService themeService,
+		AutoStartService autoStartService,
 		ServerListViewModel serverList)
 	{
 		_configWriter = configWriter;
@@ -59,6 +63,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		_pacServerService = pacServerService;
 		_dialogService = dialogService;
 		_themeService = themeService;
+		_autoStartService = autoStartService;
 		_serverList = serverList;
 
 		_engineService.LogReceived += OnEngineLogReceived;
@@ -68,6 +73,7 @@ public partial class ControlPanelViewModel : ObservableObject
 
 		UpdateRouteModeColors();
 		RaiseThemeStateChanged();
+		InitializeAutoStartState();
 	}
 
 	public ElementTheme CurrentTheme => _themeService.CurrentTheme;
@@ -134,6 +140,23 @@ public partial class ControlPanelViewModel : ObservableObject
 
 	public bool CanEditRouteSettings => !IsRunning;
 	public bool CanChangeProxyMode => !IsRunning;
+
+	public bool IsAutoStartEnabled
+	{
+		get => _isAutoStartEnabled;
+		set
+		{
+			if (SetProperty(ref _isAutoStartEnabled, value))
+			{
+				if (_isAutoStartStateInternalUpdate)
+				{
+					return;
+				}
+
+				_ = ApplyAutoStartPreferenceAsync(value);
+			}
+		}
+	}
 
 	public bool IsBypassChinaMode
 	{
@@ -455,6 +478,48 @@ public partial class ControlPanelViewModel : ObservableObject
 	private void ThemeServiceOnThemeChanged(object? sender, EventArgs e)
 	{
 		RaiseThemeStateChanged();
+	}
+
+	private void InitializeAutoStartState()
+	{
+		try
+		{
+			_isAutoStartStateInternalUpdate = true;
+			_isAutoStartEnabled = _autoStartService.IsEnabled();
+			OnPropertyChanged(nameof(IsAutoStartEnabled));
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"读取开机启动状态失败: {ex.Message}");
+		}
+		finally
+		{
+			_isAutoStartStateInternalUpdate = false;
+		}
+	}
+
+	private async Task ApplyAutoStartPreferenceAsync(bool enable)
+	{
+		try
+		{
+			if (enable)
+			{
+				_autoStartService.Enable();
+			}
+			else
+			{
+				_autoStartService.Disable();
+			}
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"更新开机启动状态失败: {ex.Message}");
+			_isAutoStartStateInternalUpdate = true;
+			_isAutoStartEnabled = !enable;
+			OnPropertyChanged(nameof(IsAutoStartEnabled));
+			_isAutoStartStateInternalUpdate = false;
+			await _dialogService.ShowErrorAsync("更新开机启动失败", ex.Message);
+		}
 	}
 
 	[RelayCommand]
