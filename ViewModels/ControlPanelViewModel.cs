@@ -325,7 +325,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		}
 	}
 
-	private bool CanEditLocalPort() => !IsRunning;
+	private bool CanEditLocalPort() => true;
 
 	[RelayCommand(CanExecute = nameof(CanEditLocalPort))]
 	private async Task EditLocalPortAsync()
