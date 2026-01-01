@@ -30,6 +30,7 @@ public partial class ControlPanelViewModel : ObservableObject
 	private readonly TunService _tunService;
 	private readonly ServerListViewModel _serverList;
 	private readonly Queue<string> _logEntries = new();
+	private bool _pendingServerListCheck;
 
 	private DispatcherQueue? _dispatcherQueue;
 	private ProxyMode _currentProxyMode = ProxyMode.PAC;
@@ -313,7 +314,13 @@ public partial class ControlPanelViewModel : ObservableObject
 			}
 
 			// 启动引擎（TUN 模式带额外参数）
-			_engineService.Start(configPath, isTunMode, outboundInterface, tunInterfaceName, tunInterfaceAddress);
+			_engineService.Start(
+				configPath,
+				isTunMode,
+				outboundInterface,
+				tunInterfaceName,
+				tunInterfaceAddress,
+				requireAdmin: isTunMode);
 
 			// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
 			if (!isTunMode)
@@ -346,7 +353,10 @@ public partial class ControlPanelViewModel : ObservableObject
 				_currentTunServerHost = server.Host;
 				// 等待一小段时间让 TUN 接口创建完成
 				await Task.Delay(1000);
-				_tunService.SetupTunRoutes(server.Host);
+				if (!_tunService.SetupTunRoutes(server.Host))
+				{
+					throw new InvalidOperationException("TUN 路由设置失败，请允许管理员权限。");
+				}
 			}
 
 			IsRunning = true;
@@ -443,10 +453,20 @@ public partial class ControlPanelViewModel : ObservableObject
 
 	private void OnServersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
 	{
-		if (IsRunning && _serverList.ActiveServer != null && !_serverList.Servers.Contains(_serverList.ActiveServer))
+		if (!IsRunning || _serverList.ActiveServer == null || _pendingServerListCheck)
 		{
-			_ = StopAsync();
+			return;
 		}
+
+		_pendingServerListCheck = true;
+		_dispatcherQueue?.TryEnqueue(() =>
+		{
+			_pendingServerListCheck = false;
+			if (IsRunning && _serverList.ActiveServer != null && !_serverList.Servers.Contains(_serverList.ActiveServer))
+			{
+				_ = StopAsync();
+			}
+		});
 	}
 
 	private void OnEngineLogReceived(object? sender, string log)

@@ -11,11 +11,11 @@
     </application>
   </compatibility>
   
-  <!-- TUN 模式需要管理员权限来创建虚拟网络接口 -->
+  <!-- TUN 模式通过独立提权进程完成需要管理员权限的操作 -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
     <security>
       <requestedPrivileges>
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

@@ -1,7 +1,10 @@
 using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Security.Principal;
 using Windows.ApplicationModel;
 
 namespace App2.Services;
@@ -214,12 +217,24 @@ public class TunService
             System.Diagnostics.Debug.WriteLine($"[TunService] TUN 接口索引: {tunInterfaceIndex}");
 
             // 1. 为 SS 服务器添加直连路由（通过原网关）
-            RunRouteCommand($"add {serverAddress} mask 255.255.255.255 {originalGateway} metric 5");
+            if (!IsSafeRouteTarget(serverAddress))
+            {
+                System.Diagnostics.Debug.WriteLine("[TunService] 服务器地址包含非法字符，已阻止路由设置");
+                return false;
+            }
 
-            // 2. 添加 0.0.0.0/1 和 128.0.0.0/1 路由，覆盖默认路由但不删除它
-            // 使用 if 参数指定 TUN 接口索引，确保流量走 TUN
-            RunRouteCommand($"add 0.0.0.0 mask 128.0.0.0 {TunGateway} metric 5 if {tunInterfaceIndex}");
-            RunRouteCommand($"add 128.0.0.0 mask 128.0.0.0 {TunGateway} metric 5 if {tunInterfaceIndex}");
+            var commands = new[]
+            {
+                $"add {serverAddress} mask 255.255.255.255 {originalGateway} metric 5",
+                $"add 0.0.0.0 mask 128.0.0.0 {TunGateway} metric 5 if {tunInterfaceIndex}",
+                $"add 128.0.0.0 mask 128.0.0.0 {TunGateway} metric 5 if {tunInterfaceIndex}"
+            };
+
+            if (!RunRouteCommands(commands))
+            {
+                System.Diagnostics.Debug.WriteLine("[TunService] TUN 路由设置失败");
+                return false;
+            }
 
             System.Diagnostics.Debug.WriteLine("[TunService] TUN 路由设置完成");
             return true;
@@ -239,14 +254,18 @@ public class TunService
     {
         try
         {
-            // 删除我们添加的路由
-            RunRouteCommand($"delete 0.0.0.0 mask 128.0.0.0");
-            RunRouteCommand($"delete 128.0.0.0 mask 128.0.0.0");
-
-            if (!string.IsNullOrEmpty(serverAddress))
+            var commands = new System.Collections.Generic.List<string>
             {
-                RunRouteCommand($"delete {serverAddress}");
+                "delete 0.0.0.0 mask 128.0.0.0",
+                "delete 128.0.0.0 mask 128.0.0.0"
+            };
+
+            if (!string.IsNullOrEmpty(serverAddress) && IsSafeRouteTarget(serverAddress))
+            {
+                commands.Add($"delete {serverAddress}");
             }
+
+            RunRouteCommands(commands);
 
             System.Diagnostics.Debug.WriteLine("[TunService] TUN 路由清理完成");
         }
@@ -256,7 +275,100 @@ public class TunService
         }
     }
 
-    private void RunRouteCommand(string arguments)
+    private static bool IsAdministrator()
+    {
+        try
+        {
+            using var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsSafeRouteTarget(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        foreach (var ch in value)
+        {
+            if (char.IsWhiteSpace(ch) || ch is '&' or '|' or '>' or '<' or '^')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private bool RunRouteCommands(System.Collections.Generic.IReadOnlyList<string> commands)
+    {
+        if (commands.Count == 0)
+        {
+            return true;
+        }
+
+        return IsAdministrator()
+            ? RunRouteCommandsDirect(commands)
+            : RunRouteCommandsElevated(commands);
+    }
+
+    private bool RunRouteCommandsDirect(System.Collections.Generic.IReadOnlyList<string> commands)
+    {
+        var success = true;
+        foreach (var command in commands)
+        {
+            success &= RunRouteCommandInternal(command);
+        }
+
+        return success;
+    }
+
+    private bool RunRouteCommandsElevated(System.Collections.Generic.IReadOnlyList<string> commands)
+    {
+        var commandLine = string.Join(" & ", commands.Select(command => $"route {command}"));
+        var cmdPath = Path.Combine(Environment.SystemDirectory, "cmd.exe");
+
+        var psi = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = cmdPath,
+            Arguments = "/c " + commandLine,
+            UseShellExecute = true,
+            Verb = "runas",
+            WindowStyle = ProcessWindowStyle.Hidden
+        };
+
+        try
+        {
+            using var process = System.Diagnostics.Process.Start(psi);
+            if (process == null)
+            {
+                return false;
+            }
+
+            process.WaitForExit(5000);
+            System.Diagnostics.Debug.WriteLine($"[TunService] route 批处理退出代码: {process.ExitCode}");
+            return process.ExitCode == 0;
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            System.Diagnostics.Debug.WriteLine("[TunService] 管理员授权被取消");
+            return false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[TunService] route 执行失败: {ex.Message}");
+            return false;
+        }
+    }
+
+    private bool RunRouteCommandInternal(string arguments)
     {
         try
         {
@@ -273,10 +385,12 @@ public class TunService
             using var process = System.Diagnostics.Process.Start(psi);
             process?.WaitForExit(5000);
             System.Diagnostics.Debug.WriteLine($"[TunService] route {arguments} - 退出代码: {process?.ExitCode}");
+            return process?.ExitCode == 0;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[TunService] route 命令执行失败: {ex.Message}");
+            return false;
         }
     }
 }

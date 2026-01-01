@@ -52,6 +52,7 @@ public partial class ServerListViewModel : ObservableObject
 			if (SetProperty(ref _activeServer, value))
 			{
 				UpdateActiveStates();
+				RaiseCommandStates();
 			}
 		}
 	}
@@ -69,8 +70,8 @@ public partial class ServerListViewModel : ObservableObject
 		}
 	}
 
-	public bool CanEditServer => !IsRunning && SelectedServer != null;
-	public bool CanRemoveServer => !IsRunning && SelectedServer != null;
+	public bool CanEditServer => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
+	public bool CanRemoveServer => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
 
 public event EventHandler? SelectedServerChanged;
 
@@ -137,7 +138,7 @@ private async Task AddManualAsync()
 		await ShowEditorAsync("手动添加服务器", null);
 	}
 
-private bool CanModifySelectedServer() => SelectedServer != null && !IsRunning;
+private bool CanModifySelectedServer() => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
 
 [RelayCommand(CanExecute = nameof(CanModifySelectedServer))]
 private async Task EditServerAsync()

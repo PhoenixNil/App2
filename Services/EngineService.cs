@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Principal;
 using Windows.ApplicationModel;
 
 namespace App2.Services;
@@ -66,7 +68,13 @@ public class EngineService : IDisposable
     /// <param name="outboundInterface">出站网络接口（TUN 模式必需）</param>
     /// <param name="tunInterfaceName">TUN 接口名称</param>
     /// <param name="tunInterfaceAddress">TUN 接口地址（CIDR 格式，如 10.255.0.1/24）</param>
-    public void Start(string configPath, bool isTunMode = false, string? outboundInterface = null, string? tunInterfaceName = null, string? tunInterfaceAddress = null)
+    public void Start(
+        string configPath,
+        bool isTunMode = false,
+        string? outboundInterface = null,
+        string? tunInterfaceName = null,
+        string? tunInterfaceAddress = null,
+        bool requireAdmin = false)
     {
         if (IsRunning)
         {
@@ -102,43 +110,36 @@ public class EngineService : IDisposable
             }
         }
 
+        var runElevated = requireAdmin && !IsAdministrator();
+
         LogReceived?.Invoke(this, $"启动命令: {_enginePath} {arguments}");
-
-        _process = new Process
+        if (runElevated)
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = _enginePath,
-                Arguments = arguments,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                WorkingDirectory = Path.GetDirectoryName(_enginePath)
-            }
+            LogReceived?.Invoke(this, "TUN 模式需要管理员权限，正在请求提升...");
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = _enginePath,
+            Arguments = arguments,
+            WorkingDirectory = Path.GetDirectoryName(_enginePath)
         };
 
-        _process.OutputDataReceived += (s, e) =>
+        if (runElevated)
         {
-            if (!string.IsNullOrEmpty(e.Data))
-            {
-                LogReceived?.Invoke(this, $"[INFO] {e.Data}");
-            }
-        };
+            startInfo.UseShellExecute = true;
+            startInfo.Verb = "runas";
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
+        }
+        else
+        {
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+        }
 
-        _process.ErrorDataReceived += (s, e) =>
-        {
-            if (!string.IsNullOrEmpty(e.Data))
-            {
-                // 过滤常见的非关键错误
-                if (e.Data.Contains("connection closed before message completed"))
-                {
-                    // 这是正常现象，不记录
-                    return;
-                }
-                LogReceived?.Invoke(this, $"[ERROR] {e.Data}");
-            }
-        };
+        _process = new Process { StartInfo = startInfo };
 
         // 监听进程退出
         _process.Exited += (s, e) =>
@@ -147,11 +148,60 @@ public class EngineService : IDisposable
         };
         _process.EnableRaisingEvents = true;
 
-        _process.Start();
-        _process.BeginOutputReadLine();
-        _process.BeginErrorReadLine();
+        try
+        {
+            _process.Start();
+        }
+        catch (Win32Exception ex) when (runElevated && ex.NativeErrorCode == 1223)
+        {
+            _process.Dispose();
+            _process = null;
+            throw new InvalidOperationException("已取消管理员授权，无法启动 TUN 模式。", ex);
+        }
+
+        if (!runElevated)
+        {
+            _process.OutputDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    LogReceived?.Invoke(this, $"[INFO] {e.Data}");
+                }
+            };
+
+            _process.ErrorDataReceived += (s, e) =>
+            {
+                if (!string.IsNullOrEmpty(e.Data))
+                {
+                    // 过滤常见的非关键错误
+                    if (e.Data.Contains("connection closed before message completed"))
+                    {
+                        // 这是正常现象，不记录
+                        return;
+                    }
+                    LogReceived?.Invoke(this, $"[ERROR] {e.Data}");
+                }
+            };
+
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
+        }
 
         LogReceived?.Invoke(this, $"sslocal 已启动，PID: {_process.Id}");
+    }
+
+    private static bool IsAdministrator()
+    {
+        try
+        {
+            using var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
