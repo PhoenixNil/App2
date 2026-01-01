@@ -61,7 +61,12 @@ public class EngineService : IDisposable
     /// <summary>
     /// 启动 sslocal 进程
     /// </summary>
-    public void Start(string configPath)
+    /// <param name="configPath">配置文件路径</param>
+    /// <param name="isTunMode">是否为 TUN 模式</param>
+    /// <param name="outboundInterface">出站网络接口（TUN 模式必需）</param>
+    /// <param name="tunInterfaceName">TUN 接口名称</param>
+    /// <param name="tunInterfaceAddress">TUN 接口地址（CIDR 格式，如 10.255.0.1/24）</param>
+    public void Start(string configPath, bool isTunMode = false, string? outboundInterface = null, string? tunInterfaceName = null, string? tunInterfaceAddress = null)
     {
         if (IsRunning)
         {
@@ -73,12 +78,38 @@ public class EngineService : IDisposable
             throw new FileNotFoundException("配置文件不存在", configPath);
         }
 
+        // 构建命令行参数
+        var arguments = $"-c \"{configPath}\"";
+
+        if (isTunMode)
+        {
+            arguments += " --protocol tun";
+
+            if (!string.IsNullOrEmpty(outboundInterface))
+            {
+                arguments += $" --outbound-bind-interface \"{outboundInterface}\"";
+            }
+
+            if (!string.IsNullOrEmpty(tunInterfaceName))
+            {
+                arguments += $" --tun-interface-name \"{tunInterfaceName}\"";
+            }
+
+            // TUN 接口地址是正确配置路由的关键参数
+            if (!string.IsNullOrEmpty(tunInterfaceAddress))
+            {
+                arguments += $" --tun-interface-address \"{tunInterfaceAddress}\"";
+            }
+        }
+
+        LogReceived?.Invoke(this, $"启动命令: {_enginePath} {arguments}");
+
         _process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = _enginePath,
-                Arguments = $"-c \"{configPath}\"",
+                Arguments = arguments,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,

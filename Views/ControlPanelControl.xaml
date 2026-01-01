@@ -134,7 +134,7 @@
             </TeachingTip>
 
             <Grid Grid.Row="1"
-                  ColumnSpacing="24">
+                  ColumnSpacing="20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -160,18 +160,34 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
-                            Spacing="8">
-                    <TextBlock Text="代理模式: "
-                               VerticalAlignment="Center"
-                               FontWeight="SemiBold"
-                               Margin="0,0,4,0" />
-                    <ComboBox SelectedIndex="{x:Bind ViewModel.ProxyModeIndex, Mode=TwoWay}"
-                              IsEnabled="{x:Bind ViewModel.CanChangeProxyMode, Mode=OneWay}"
-                              MinWidth="100">
-                        <x:String>全局代理</x:String>
-                        <x:String>PAC模式</x:String>
-                        <x:String>直连模式</x:String>
-                    </ComboBox>
+                            Spacing="16">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="6">
+                        <TextBlock Text="TUN模式"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold" />
+                        <ToggleSwitch IsOn="{x:Bind ViewModel.IsTunEnabled, Mode=TwoWay}"
+                                      IsEnabled="{x:Bind ViewModel.CanChangeTunMode, Mode=OneWay}"
+                                      OnContent="开"
+                                      OffContent="关"
+                                      MinWidth="64" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Spacing="6">
+                        <TextBlock Text="代理模式: "
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,4,0" />
+                        <ComboBox SelectedIndex="{x:Bind ViewModel.ProxyModeIndex, Mode=TwoWay}"
+                                  IsEnabled="{x:Bind ViewModel.CanChangeProxyMode, Mode=OneWay}"
+                                  MinWidth="100">
+                            <x:String>全局代理</x:String>
+                            <x:String>PAC模式</x:String>
+                            <x:String>直连模式</x:String>
+                        </ComboBox>
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Grid>

@@ -46,6 +46,7 @@ public partial class App : Application
 		services.AddSingleton(provider => new PACServerService(7090));
 		services.AddSingleton<ConfigStorage>();
 		services.AddSingleton<LatencyTestService>();
+		services.AddSingleton<TunService>();
 
 		services.AddSingleton<ServerListViewModel>();
 		services.AddSingleton(provider => new ControlPanelViewModel(
@@ -56,6 +57,7 @@ public partial class App : Application
 			provider.GetRequiredService<IDialogService>(),
 			provider.GetRequiredService<IThemeService>(),
 			provider.GetRequiredService<AutoStartService>(),
+			provider.GetRequiredService<TunService>(),
 			provider.GetRequiredService<ServerListViewModel>()));
 		services.AddSingleton(provider => new ServerDetailViewModel(
 			provider.GetRequiredService<ServerListViewModel>(),

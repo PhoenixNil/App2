@@ -9,6 +9,7 @@ namespace App2.Models;
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(SSConfig))]
+[JsonSerializable(typeof(DnsConfig))]
 [JsonSerializable(typeof(Server))]
 [JsonSerializable(typeof(Server[]))]
 public partial class JsonContext : JsonSerializerContext

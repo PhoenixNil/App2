@@ -27,6 +27,7 @@ public partial class ControlPanelViewModel : ObservableObject
 	private readonly IDialogService _dialogService;
 	private readonly IThemeService _themeService;
 	private readonly AutoStartService _autoStartService;
+	private readonly TunService _tunService;
 	private readonly ServerListViewModel _serverList;
 	private readonly Queue<string> _logEntries = new();
 
@@ -46,6 +47,8 @@ public partial class ControlPanelViewModel : ObservableObject
 	private bool _isThemePickerOpen;
 	private bool _isAutoStartEnabled;
 	private bool _isAutoStartStateInternalUpdate;
+	private bool _isTunEnabled;
+	private string? _currentTunServerHost; // TUN 模式运行时的服务器地址（用于清理路由）
 
 	public ControlPanelViewModel(
 		ConfigWriter configWriter,
@@ -55,6 +58,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		IDialogService dialogService,
 		IThemeService themeService,
 		AutoStartService autoStartService,
+		TunService tunService,
 		ServerListViewModel serverList)
 	{
 		_configWriter = configWriter;
@@ -64,6 +68,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		_dialogService = dialogService;
 		_themeService = themeService;
 		_autoStartService = autoStartService;
+		_tunService = tunService;
 		_serverList = serverList;
 
 		_engineService.LogReceived += OnEngineLogReceived;
@@ -104,6 +109,7 @@ public partial class ControlPanelViewModel : ObservableObject
 				EditLocalPortCommand.NotifyCanExecuteChanged();
 				OnPropertyChanged(nameof(CanEditRouteSettings));
 				OnPropertyChanged(nameof(CanChangeProxyMode));
+				OnPropertyChanged(nameof(CanChangeTunMode));
 			}
 		}
 	}
@@ -140,6 +146,13 @@ public partial class ControlPanelViewModel : ObservableObject
 
 	public bool CanEditRouteSettings => !IsRunning;
 	public bool CanChangeProxyMode => !IsRunning;
+	public bool CanChangeTunMode => !IsRunning;
+
+	public bool IsTunEnabled
+	{
+		get => _isTunEnabled;
+		set => SetProperty(ref _isTunEnabled, value);
+	}
 
 	public bool IsAutoStartEnabled
 	{
@@ -257,6 +270,29 @@ public partial class ControlPanelViewModel : ObservableObject
 
 		try
 		{
+			bool isTunMode = _isTunEnabled;
+			string? outboundInterface = null;
+			string? tunInterfaceName = null;
+			string? tunInterfaceAddress = null;
+
+			// TUN 模式前置检查
+			if (isTunMode)
+			{
+				if (!_tunService.IsWintunAvailable())
+				{
+					var expectedPath = _tunService.GetExpectedWintunPath();
+					throw new InvalidOperationException($"TUN 模式需要 wintun.dll，请将其放置到: {expectedPath}");
+				}
+
+				outboundInterface = _tunService.DetectOutboundInterface();
+				if (string.IsNullOrEmpty(outboundInterface))
+				{
+					throw new InvalidOperationException("无法检测到有效的出站网络接口，请检查网络连接");
+				}
+				tunInterfaceName = _tunService.DefaultTunInterfaceName;
+				tunInterfaceAddress = _tunService.DefaultTunInterfaceAddress;
+			}
+
 			string? aclPath = null;
 			if (_currentProxyMode == ProxyMode.Global && _isBypassChinaMode)
 			{
@@ -268,34 +304,55 @@ public partial class ControlPanelViewModel : ObservableObject
 				}
 			}
 
-			_configWriter.WriteConfig(server, _localPort, aclPath);
+			// 写入配置（TUN 模式包含 DNS 配置）
+			_configWriter.WriteConfig(server, _localPort, aclPath, isTunMode, isTunMode ? _tunService.DnsServers : null);
 			var configPath = _configWriter.GetConfigPath();
 			if (!File.Exists(configPath))
 			{
 				throw new InvalidOperationException($"配置文件创建失败: {configPath}");
 			}
 
-			_engineService.Start(configPath);
+			// 启动引擎（TUN 模式带额外参数）
+			_engineService.Start(configPath, isTunMode, outboundInterface, tunInterfaceName, tunInterfaceAddress);
 
-			if (_currentProxyMode == ProxyMode.PAC)
+			// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
+			if (!isTunMode)
 			{
-				await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
-				_proxyService.SetPACUrl(_pacServerService.PACUrl);
+				if (_currentProxyMode == ProxyMode.PAC)
+				{
+					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
+					_proxyService.SetPACUrl(_pacServerService.PACUrl);
+				}
+				else
+				{
+					await _pacServerService.StopAsync();
+				}
+
+				_proxyService.SetProxyServer("127.0.0.1", _localPort);
+				_proxyService.SetProxyMode(_currentProxyMode);
 			}
 			else
 			{
+				// TUN 模式确保不设置系统代理
 				await _pacServerService.StopAsync();
+				_proxyService.ClearProxy();
 			}
 
-			_proxyService.SetProxyServer("127.0.0.1", _localPort);
-			_proxyService.SetProxyMode(_currentProxyMode);
-
 			_serverList.SetActiveServer(server);
+
+			// TUN 模式设置路由（将所有流量引导到 TUN 接口）
+			if (isTunMode)
+			{
+				_currentTunServerHost = server.Host;
+				// 等待一小段时间让 TUN 接口创建完成
+				await Task.Delay(1000);
+				_tunService.SetupTunRoutes(server.Host);
+			}
 
 			IsRunning = true;
 			StartStopButtonContent = "停止";
 			StartStopButtonChecked = true;
-			StatusText = "状态：已运行";
+			StatusText = isTunMode ? "状态：TUN 运行中" : "状态：已运行";
 			StatusIconColor = Color.FromArgb(255, 0, 128, 0);
 		}
 		catch (Exception ex)
@@ -328,6 +385,13 @@ public partial class ControlPanelViewModel : ObservableObject
 	{
 		try
 		{
+			// TUN 模式清理路由
+			if (_currentTunServerHost != null)
+			{
+				_tunService.CleanupTunRoutes(_currentTunServerHost);
+				_currentTunServerHost = null;
+			}
+
 			_engineService.Stop();
 			_proxyService.ClearProxy();
 			await _pacServerService.StopAsync();
