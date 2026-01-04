@@ -15,6 +15,9 @@ namespace App2.Services;
 public class TunService
 {
     private readonly string _engineDirectory;
+    private const int OutboundInterfaceCacheSeconds = 30;
+    private string? _cachedOutboundInterface;
+    private DateTimeOffset _cachedOutboundInterfaceAt;
 
     /// <summary>
     /// 默认 TUN 接口名称
@@ -59,10 +62,15 @@ public class TunService
     /// 检测主要的出站网络接口名称
     /// </summary>
     /// <returns>网络接口名称，如果检测失败则返回 null</returns>
-    public string? DetectOutboundInterface()
+    public string? DetectOutboundInterface(bool forceRefresh = false)
     {
         try
         {
+            if (!forceRefresh && TryGetCachedOutboundInterface(out var cached))
+            {
+                return cached;
+            }
+
             var interfaces = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(ni => ni.OperationalStatus == OperationalStatus.Up
                     && ni.NetworkInterfaceType != NetworkInterfaceType.Loopback
@@ -80,13 +88,38 @@ public class TunService
                 ni.GetIPProperties().GatewayAddresses.Any(g =>
                     g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork));
 
-            return primaryInterface?.Name ?? interfaces.FirstOrDefault()?.Name;
+            var detected = primaryInterface?.Name ?? interfaces.FirstOrDefault()?.Name;
+            CacheOutboundInterface(detected);
+            return detected;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[TunService] 检测网络接口失败: {ex.Message}");
             return null;
         }
+    }
+
+    private bool TryGetCachedOutboundInterface(out string? cached)
+    {
+        cached = _cachedOutboundInterface;
+        if (string.IsNullOrWhiteSpace(cached))
+        {
+            return false;
+        }
+
+        var age = DateTimeOffset.UtcNow - _cachedOutboundInterfaceAt;
+        return age <= TimeSpan.FromSeconds(OutboundInterfaceCacheSeconds);
+    }
+
+    private void CacheOutboundInterface(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        _cachedOutboundInterface = value;
+        _cachedOutboundInterfaceAt = DateTimeOffset.UtcNow;
     }
 
     /// <summary>

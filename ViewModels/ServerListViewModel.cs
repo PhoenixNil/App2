@@ -228,19 +228,13 @@ private async Task RemoveServerAsync()
 			target.OnPropertyChanged(nameof(ServerEntry.Port));
 			target.OnPropertyChanged(nameof(ServerEntry.Method));
 			SelectedServer = target;
+			SaveServersSafely();
 		}
 	}
 
 	private void OnServersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
 	{
-		try
-		{
-			_configStorage.SaveServers(Servers);
-		}
-		catch (Exception ex)
-		{
-			System.Diagnostics.Debug.WriteLine($"保存服务器列表失败: {ex.Message}");
-		}
+		SaveServersSafely();
 
 		if (Servers.Count == 0)
 		{
@@ -262,6 +256,18 @@ private async Task RemoveServerAsync()
 		OnPropertyChanged(nameof(CanRemoveServer));
 		EditServerCommand.NotifyCanExecuteChanged();
 		RemoveServerCommand.NotifyCanExecuteChanged();
+	}
+
+	private void SaveServersSafely()
+	{
+		try
+		{
+			_configStorage.SaveServers(Servers);
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"保存服务器列表失败: {ex.Message}");
+		}
 	}
 
 	public ServerEntry? ParseSSUrl(string ssUrl)

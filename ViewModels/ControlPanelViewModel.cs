@@ -288,6 +288,10 @@ public partial class ControlPanelViewModel : ObservableObject
 				outboundInterface = _tunService.DetectOutboundInterface();
 				if (string.IsNullOrEmpty(outboundInterface))
 				{
+					outboundInterface = _tunService.DetectOutboundInterface(forceRefresh: true);
+				}
+				if (string.IsNullOrEmpty(outboundInterface))
+				{
 					throw new InvalidOperationException("无法检测到有效的出站网络接口，请检查网络连接");
 				}
 				tunInterfaceName = _tunService.DefaultTunInterfaceName;

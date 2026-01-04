@@ -67,6 +67,7 @@
                                             Command="{x:Bind ViewModel.ViewLogsCommand}" />
                             <MenuFlyoutItem Text="设置主题"
                                             Command="{x:Bind ViewModel.ToggleThemePickerCommand}" />
+                            <MenuFlyoutSeparator/>
                             <ToggleMenuFlyoutItem Text="开机启动"
                                                   IsChecked="{x:Bind ViewModel.IsAutoStartEnabled, Mode=TwoWay}"/>
                             <MenuFlyoutSubItem Text="路由设置"
