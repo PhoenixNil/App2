@@ -39,25 +39,27 @@ public partial class App : Application
 			provider.GetRequiredService<IWindowContext>(),
 			provider.GetRequiredService<IClipboardService>(),
 			provider.GetRequiredService<IThemeService>()));
-		services.AddSingleton<ConfigWriter>();
+		services.AddSingleton<IConfigWriter, ConfigWriter>();
 		services.AddSingleton<AutoStartService>();
-		services.AddSingleton<EngineService>();
-		services.AddSingleton<ProxyService>();
+		services.AddSingleton<IEngineService, EngineService>();
+		services.AddSingleton<IProxyService, ProxyService>();
 		services.AddSingleton(provider => new PACServerService(7090));
-		services.AddSingleton<ConfigStorage>();
+		services.AddSingleton<IConfigStorage, ConfigStorage>();
 		services.AddSingleton<LatencyTestService>();
-		services.AddSingleton<TunService>();
+		services.AddSingleton<ITunService, TunService>();
+		services.AddSingleton<IAclService, AclService>();
 
 		services.AddSingleton<ServerListViewModel>();
 		services.AddSingleton(provider => new ControlPanelViewModel(
-			provider.GetRequiredService<ConfigWriter>(),
-			provider.GetRequiredService<EngineService>(),
-			provider.GetRequiredService<ProxyService>(),
+			provider.GetRequiredService<IConfigWriter>(),
+			provider.GetRequiredService<IEngineService>(),
+			provider.GetRequiredService<IProxyService>(),
 			provider.GetRequiredService<PACServerService>(),
 			provider.GetRequiredService<IDialogService>(),
 			provider.GetRequiredService<IThemeService>(),
 			provider.GetRequiredService<AutoStartService>(),
-			provider.GetRequiredService<TunService>(),
+			provider.GetRequiredService<ITunService>(),
+			provider.GetRequiredService<IAclService>(),
 			provider.GetRequiredService<ServerListViewModel>()));
 		services.AddSingleton(provider => new ServerDetailViewModel(
 			provider.GetRequiredService<ServerListViewModel>(),

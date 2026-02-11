@@ -1,5 +1,6 @@
 using App2.Models;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -8,7 +9,7 @@ namespace App2.Services;
 /// <summary>
 /// 负责生成和写入 sslocal 配置文件
 /// </summary>
-public class ConfigWriter
+public class ConfigWriter : IConfigWriter
 {
     private readonly string _configPath;
 
@@ -34,6 +35,15 @@ public class ConfigWriter
     /// <param name="dnsServers">DNS 服务器列表（TUN 模式用于防止 DNS 泄漏）</param>
     public void WriteConfig(ServerEntry server, int localPort = 1080, string? aclPath = null, bool isTunMode = false, string[]? dnsServers = null)
     {
+        if (!string.IsNullOrWhiteSpace(aclPath))
+        {
+            aclPath = Path.GetFullPath(aclPath);
+            if (!Path.IsPathRooted(aclPath))
+            {
+                throw new InvalidOperationException("ACL 路径必须为绝对路径。");
+            }
+        }
+
         var config = new SSConfig
         {
             Server = server.Host,
@@ -61,6 +71,9 @@ public class ConfigWriter
 
         var json = JsonSerializer.Serialize(config, JsonContext.Default.SSConfig);
         File.WriteAllText(_configPath, json);
+        Debug.WriteLine($"[ConfigWriter] 已写入配置: {_configPath}");
+        Debug.WriteLine($"[ConfigWriter] ACL: {(string.IsNullOrWhiteSpace(config.ACL) ? "<none>" : config.ACL)}");
+        Debug.WriteLine($"[ConfigWriter] TUN: {isTunMode}, DNS: {(string.IsNullOrWhiteSpace(config.Dns) ? "<none>" : config.Dns)}");
     }
 
     /// <summary>

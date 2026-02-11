@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using App2.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,14 +22,15 @@ public partial class ControlPanelViewModel : ObservableObject
 	private const int MinimumLocalPort = 1024;
 	private const int MaximumLocalPort = 65535;
 
-	private readonly ConfigWriter _configWriter;
-	private readonly EngineService _engineService;
-	private readonly ProxyService _proxyService;
+	private readonly IConfigWriter _configWriter;
+	private readonly IEngineService _engineService;
+	private readonly IProxyService _proxyService;
 	private readonly PACServerService _pacServerService;
 	private readonly IDialogService _dialogService;
 	private readonly IThemeService _themeService;
 	private readonly AutoStartService _autoStartService;
-	private readonly TunService _tunService;
+	private readonly ITunService _tunService;
+	private readonly IAclService _aclService;
 	private readonly ServerListViewModel _serverList;
 	private readonly Queue<string> _logEntries = new();
 	private bool _pendingServerListCheck;
@@ -52,14 +55,15 @@ public partial class ControlPanelViewModel : ObservableObject
 	private string? _currentTunServerHost; // TUN 模式运行时的服务器地址（用于清理路由）
 
 	public ControlPanelViewModel(
-		ConfigWriter configWriter,
-		EngineService engineService,
-		ProxyService proxyService,
+		IConfigWriter configWriter,
+		IEngineService engineService,
+		IProxyService proxyService,
 		PACServerService pacServerService,
 		IDialogService dialogService,
 		IThemeService themeService,
 		AutoStartService autoStartService,
-		TunService tunService,
+		ITunService tunService,
+		IAclService aclService,
 		ServerListViewModel serverList)
 	{
 		_configWriter = configWriter;
@@ -70,6 +74,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		_themeService = themeService;
 		_autoStartService = autoStartService;
 		_tunService = tunService;
+		_aclService = aclService;
 		_serverList = serverList;
 
 		_engineService.LogReceived += OnEngineLogReceived;
@@ -152,7 +157,13 @@ public partial class ControlPanelViewModel : ObservableObject
 	public bool IsTunEnabled
 	{
 		get => _isTunEnabled;
-		set => SetProperty(ref _isTunEnabled, value);
+		set
+		{
+			if (SetProperty(ref _isTunEnabled, value))
+			{
+				OnPropertyChanged(nameof(IsRouteModeBadgeVisible));
+			}
+		}
 	}
 
 	public bool IsAutoStartEnabled
@@ -191,7 +202,7 @@ public partial class ControlPanelViewModel : ObservableObject
 
 	public string RouteModeBadgeText => _isBypassChinaMode ? "绕过大陆" : "全局路由";
 	public string RouteModeBadgeIcon => _isBypassChinaMode ? "\uE72E" : "\uE774";
-	public bool IsRouteModeBadgeVisible => _currentProxyMode == ProxyMode.Global;
+	public bool IsRouteModeBadgeVisible => _currentProxyMode == ProxyMode.Global || _isTunEnabled;
 
 	public Color RouteModeBadgeForegroundColor
 	{
@@ -269,12 +280,17 @@ public partial class ControlPanelViewModel : ObservableObject
 			return;
 		}
 
-		try
-		{
-			bool isTunMode = _isTunEnabled;
-			string? outboundInterface = null;
-			string? tunInterfaceName = null;
-			string? tunInterfaceAddress = null;
+			try
+			{
+				bool isTunMode = _isTunEnabled;
+				string? outboundInterface = null;
+				string? tunInterfaceName = null;
+				string? tunInterfaceAddress = null;
+
+				if (!IsLocalPortAvailable(_localPort))
+				{
+					throw new InvalidOperationException($"本地端口 {_localPort} 已被占用。请先关闭占用该端口的程序（常见为残留 sslocal.exe），或修改本地端口后重试。");
+				}
 
 			// TUN 模式前置检查
 			if (isTunMode)
@@ -299,55 +315,86 @@ public partial class ControlPanelViewModel : ObservableObject
 			}
 
 			string? aclPath = null;
-			if (_currentProxyMode == ProxyMode.Global && _isBypassChinaMode)
+			var shouldUseAcl = _isBypassChinaMode && (_currentProxyMode == ProxyMode.Global || isTunMode);
+			EnqueueLog("ACL", $"ACL 启用判定: {shouldUseAcl} (绕过大陆={_isBypassChinaMode}, 代理模式={_currentProxyMode}, TUN={isTunMode})");
+			if (shouldUseAcl)
 			{
-				var exeDir = AppContext.BaseDirectory;
-				var aclFile = Path.Combine(exeDir, "shadowsocks.acl");
-				if (File.Exists(aclFile))
+				aclPath = _aclService.ResolveAclPath();
+				if (string.IsNullOrEmpty(aclPath))
 				{
-					aclPath = aclFile;
+					throw new InvalidOperationException("绕过大陆模式需要有效的 ACL 文件，但未找到 shadowsocks.acl。请确认文件已部署到应用目录。");
+				}
+
+				if (!_aclService.ValidateAclFile(aclPath, out var validationError))
+				{
+					throw new InvalidOperationException($"绕过大陆模式需要有效的 ACL 文件，但当前文件不可用：{validationError}");
+				}
+
+				EnqueueLog("ACL", $"使用 ACL 文件: {aclPath}");
+				if (_aclService.TryGetAclRuleStats(aclPath, out var ipRuleCount, out var domainRuleCount))
+				{
+					EnqueueLog("ACL", $"ACL 条目统计: IP/CIDR={ipRuleCount}, 域名/规则={domainRuleCount}");
 				}
 			}
 
 			// 写入配置（TUN 模式包含 DNS 配置）
 			_configWriter.WriteConfig(server, _localPort, aclPath, isTunMode, isTunMode ? _tunService.DnsServers : null);
+			if (isTunMode)
+			{
+				EnqueueLog("TUN", $"TUN DNS: {string.Join(", ", _tunService.DnsServers)}");
+			}
 			var configPath = _configWriter.GetConfigPath();
 			if (!File.Exists(configPath))
 			{
 				throw new InvalidOperationException($"配置文件创建失败: {configPath}");
 			}
 
-			// 启动引擎（TUN 模式带额外参数）
-			_engineService.Start(
-				configPath,
-				isTunMode,
-				outboundInterface,
-				tunInterfaceName,
-				tunInterfaceAddress,
-				requireAdmin: isTunMode);
+				// 启动引擎（TUN 模式带额外参数）
+					_engineService.Start(
+						configPath,
+						isTunMode,
+						outboundInterface,
+						tunInterfaceName,
+						tunInterfaceAddress,
+						requireAdmin: isTunMode);
 
-			// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
-			if (!isTunMode)
-			{
-				if (_currentProxyMode == ProxyMode.PAC)
+				// 启动后快速健康检查，避免进程秒退时仍误标记为“已运行”。
+				await Task.Delay(isTunMode ? 800 : 300);
+				if (!_engineService.IsRunning)
 				{
-					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
-					_proxyService.SetPACUrl(_pacServerService.PACUrl);
+					throw new InvalidOperationException($"sslocal 启动后立即退出。请检查本地端口 {_localPort} 是否被占用，或服务器节点配置是否正确。");
+				}
+
+				// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
+				if (!isTunMode)
+				{
+					var effectiveProxyMode = GetEffectiveProxyMode(isTunMode);
+					var useGlobalSocksPac = ShouldUseGlobalSocksPac(isTunMode);
+					EnqueueLog("PROXY", $"非 TUN 代理模式: 当前={_currentProxyMode}, 生效={effectiveProxyMode}, 全局SOCKS-PAC={useGlobalSocksPac}");
+					if (effectiveProxyMode == ProxyMode.PAC)
+					{
+						await _pacServerService.StartAsync($"127.0.0.1:{_localPort}", useGlobalSocksPac);
+						_proxyService.SetPACUrl(_pacServerService.PACUrl);
+						EnqueueLog("PAC", $"PAC URL: {_pacServerService.PACUrl}");
+						if (useGlobalSocksPac)
+						{
+							EnqueueLog("PAC", "非 TUN 全局模式使用全局 SOCKS5 PAC 以提升兼容性");
+						}
+					}
+					else
+					{
+						await _pacServerService.StopAsync();
+					}
+
+					_proxyService.SetProxyServer("127.0.0.1", _localPort);
+					_proxyService.SetProxyMode(effectiveProxyMode);
 				}
 				else
 				{
+					// TUN 模式确保不设置系统代理
 					await _pacServerService.StopAsync();
+					_proxyService.ClearProxy();
 				}
-
-				_proxyService.SetProxyServer("127.0.0.1", _localPort);
-				_proxyService.SetProxyMode(_currentProxyMode);
-			}
-			else
-			{
-				// TUN 模式确保不设置系统代理
-				await _pacServerService.StopAsync();
-				_proxyService.ClearProxy();
-			}
 
 			_serverList.SetActiveServer(server);
 
@@ -355,8 +402,8 @@ public partial class ControlPanelViewModel : ObservableObject
 			if (isTunMode)
 			{
 				_currentTunServerHost = server.Host;
-				// 等待一小段时间让 TUN 接口创建完成
-				await Task.Delay(1000);
+				// 等待 TUN 接口创建完成（加载 ACL 时 sslocal 初始化可能较慢）
+				await WaitForTunInterfaceAsync();
 				if (!_tunService.SetupTunRoutes(server.Host))
 				{
 					throw new InvalidOperationException("TUN 路由设置失败，请允许管理员权限。");
@@ -424,6 +471,31 @@ public partial class ControlPanelViewModel : ObservableObject
 			StatusText = "状态：未运行";
 			StatusIconColor = Color.FromArgb(255, 255, 0, 0);
 		}
+	}
+
+	private async Task WaitForTunInterfaceAsync()
+	{
+		const int pollIntervalMs = 500;
+		const int maxWaitMs = 15000;
+		int elapsed = 0;
+
+		while (elapsed < maxWaitMs)
+		{
+			await Task.Delay(pollIntervalMs);
+			elapsed += pollIntervalMs;
+
+			if (!_engineService.IsRunning)
+			{
+				throw new InvalidOperationException("sslocal 进程已退出，TUN 接口创建失败。请检查服务器配置。");
+			}
+
+			if (_tunService.GetTunInterfaceIndex() != null)
+			{
+				return;
+			}
+		}
+
+		throw new InvalidOperationException("等待 TUN 接口创建超时，sslocal 可能仍在初始化。请重试。");
 	}
 
 	private bool CanEditLocalPort() => true;
@@ -521,17 +593,25 @@ public partial class ControlPanelViewModel : ObservableObject
 		{
 			try
 			{
-				if (_currentProxyMode != ProxyMode.PAC)
+				var effectiveProxyMode = GetEffectiveProxyMode(_isTunEnabled);
+				var useGlobalSocksPac = ShouldUseGlobalSocksPac(_isTunEnabled);
+				EnqueueLog("PROXY", $"切换代理模式: 当前={_currentProxyMode}, 生效={effectiveProxyMode}, 全局SOCKS-PAC={useGlobalSocksPac}");
+				if (effectiveProxyMode != ProxyMode.PAC)
 				{
 					await _pacServerService.StopAsync();
 				}
 				else
 				{
-					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
+					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}", useGlobalSocksPac);
 					_proxyService.SetPACUrl(_pacServerService.PACUrl);
+					EnqueueLog("PAC", $"PAC URL: {_pacServerService.PACUrl}");
+					if (useGlobalSocksPac)
+					{
+						EnqueueLog("PAC", "运行中切换：非 TUN 全局模式使用全局 SOCKS5 PAC");
+					}
 				}
 
-				_proxyService.SetProxyMode(_currentProxyMode);
+				_proxyService.SetProxyMode(effectiveProxyMode);
 			}
 			catch (Exception ex)
 			{
@@ -540,18 +620,48 @@ public partial class ControlPanelViewModel : ObservableObject
 		}
 	}
 
+	private bool ShouldUseGlobalSocksPac(bool isTunMode)
+	{
+		// 桌面客户端（如 Telegram Desktop）对系统 PAC 兼容性不稳定，
+		// 非 TUN 全局模式统一保持手动全局代理，ACL 仍由 sslocal 处理。
+		return false;
+	}
+
+	private ProxyMode GetEffectiveProxyMode(bool isTunMode)
+	{
+		return ShouldUseGlobalSocksPac(isTunMode) ? ProxyMode.PAC : _currentProxyMode;
+	}
+
+	private static bool IsLocalPortAvailable(int port)
+	{
+		TcpListener? listener = null;
+		try
+		{
+			listener = new TcpListener(IPAddress.Loopback, port);
+			listener.Start();
+			return true;
+		}
+		catch (SocketException)
+		{
+			return false;
+		}
+		finally
+		{
+			listener?.Stop();
+		}
+	}
+
 	private void UpdateRouteModeColors()
 	{
 		if (_isBypassChinaMode)
 		{
-
-		RouteModeBadgeForegroundColor = Color.FromArgb(255, 30, 144, 255);
-		RouteModeBadgeBackgroundColor = Color.FromArgb(32, 30, 144, 255);
+			RouteModeBadgeForegroundColor = Color.FromArgb(255, 30, 144, 255);
+			RouteModeBadgeBackgroundColor = Color.FromArgb(32, 30, 144, 255);
 		}
 		else
 		{
-		RouteModeBadgeForegroundColor = Color.FromArgb(255, 255, 140, 0);
-		RouteModeBadgeBackgroundColor = Color.FromArgb(32, 255, 140, 0);
+			RouteModeBadgeForegroundColor = Color.FromArgb(255, 255, 140, 0);
+			RouteModeBadgeBackgroundColor = Color.FromArgb(32, 255, 140, 0);
 		}
 	}
 

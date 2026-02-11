@@ -10,7 +10,7 @@ namespace App2.Services;
 /// <summary>
 /// 负责持久化保存和加载服务器列表
 /// </summary>
-public class ConfigStorage
+public class ConfigStorage : IConfigStorage
 {
     private readonly string _storagePath;
 

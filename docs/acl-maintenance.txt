@@ -1,0 +1,27 @@
+# ACL Maintenance
+
+This project uses `proxy_all` + `bypass_list` for route splitting in TUN mode.
+To make domestic traffic bypass the proxy reliably, `bypass_list` must include CN IP CIDRs.
+
+## Files
+
+- `Assets/rules/cn_ip_cidr.txt`: CN IP CIDR data source (manually updated)
+- `scripts/update_cn_ip.sh`: download/update CN IP CIDR source file
+- `scripts/build_acl.sh`: rebuild `shadowsocks.acl` from existing domain rules + CN IP CIDRs
+
+## Update workflow
+
+1. Update CN IP file:
+   - `./scripts/update_cn_ip.sh`
+2. Rebuild ACL:
+   - `./scripts/build_acl.sh`
+3. Verify output summary:
+   - Ensure `IP/CIDR` count is significantly larger than private/reserved-only baseline.
+4. Commit both:
+   - `Assets/rules/cn_ip_cidr.txt`
+   - `shadowsocks.acl`
+
+## Notes
+
+- If `cn_ip_cidr.txt` is missing or stale, TUN mode may appear to proxy most domestic sites.
+- DNS choices also matter; use domestic-first DNS in TUN mode for better CN route hit rate.

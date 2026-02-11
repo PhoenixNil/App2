@@ -12,7 +12,7 @@ namespace App2.Services;
 /// <summary>
 /// TUN 模式相关服务，负责网络接口检测和 TUN 配置
 /// </summary>
-public class TunService
+public class TunService : ITunService
 {
     private readonly string _engineDirectory;
     private const int OutboundInterfaceCacheSeconds = 30;
@@ -33,7 +33,7 @@ public class TunService
     /// <summary>
     /// DNS 服务器列表（用于防止 DNS 泄漏）
     /// </summary>
-    public string[] DnsServers => new[] { "8.8.8.8", "1.1.1.1" };
+    public string[] DnsServers => new[] { "223.5.5.5", "119.29.29.29" };
 
     public TunService()
     {

@@ -14,7 +14,7 @@ namespace App2.ViewModels;
 
 public partial class ServerListViewModel : ObservableObject
 {
-	private readonly ConfigStorage _configStorage;
+	private readonly IConfigStorage _configStorage;
 	private readonly IDialogService _dialogService;
 
 	private static readonly string[] DefaultMethods = new[]
@@ -73,15 +73,15 @@ public partial class ServerListViewModel : ObservableObject
 	public bool CanEditServer => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
 	public bool CanRemoveServer => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
 
-public event EventHandler? SelectedServerChanged;
+	public event EventHandler? SelectedServerChanged;
 
-public ServerListViewModel(ConfigStorage configStorage, IDialogService dialogService)
-{
-	_configStorage = configStorage;
-	_dialogService = dialogService;
+	public ServerListViewModel(IConfigStorage configStorage, IDialogService dialogService)
+	{
+		_configStorage = configStorage;
+		_dialogService = dialogService;
 
-	Servers.CollectionChanged += OnServersCollectionChanged;
-}
+		Servers.CollectionChanged += OnServersCollectionChanged;
+	}
 
 	public void LoadServers()
 	{

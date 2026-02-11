@@ -11,12 +11,14 @@ namespace App2.Services;
 /// <summary>
 /// 负责启动和停止 sslocal.exe 进程
 /// </summary>
-public class EngineService : IDisposable
+public class EngineService : IEngineService
 {
     private Process? _process;
     private readonly string _enginePath;
 
     public bool IsRunning => _process != null && !_process.HasExited;
+    public string EnginePath => _enginePath;
+    public string EngineDirectory => Path.GetDirectoryName(_enginePath) ?? AppContext.BaseDirectory;
 
     public event EventHandler<string>? LogReceived;
 
@@ -112,6 +114,8 @@ public class EngineService : IDisposable
 
         var runElevated = requireAdmin && !IsAdministrator();
 
+        LogReceived?.Invoke(this, $"配置文件: {configPath}");
+        LogReceived?.Invoke(this, $"工作目录: {EngineDirectory}");
         LogReceived?.Invoke(this, $"启动命令: {_enginePath} {arguments}");
         if (runElevated)
         {

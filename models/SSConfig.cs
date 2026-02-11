@@ -44,7 +44,7 @@ public class SSConfig
     /// 转发模式：tcp_only, udp_only, tcp_and_udp
     /// TUN 模式需要 tcp_and_udp 才能正常工作
     /// </summary>
-    [JsonPropertyName("mode")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Mode { get; set; }
+	[JsonPropertyName("mode")]
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	public string? Mode { get; set; }
 }
