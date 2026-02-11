@@ -86,9 +86,9 @@ public class ProxyService : IProxyService
 		using var key = Registry.CurrentUser.OpenSubKey(RegistryPath, true);
 		if (key == null) return;
 
-		// 使用 SOCKS 方案声明，避免系统按 HTTP 代理解释 host:port。
+		// 使用 host:port 以兼容更多仅识别 WinINET 全局代理的应用。
 		key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
-		key.SetValue("ProxyServer", $"socks={_proxyServer}", RegistryValueKind.String);
+		key.SetValue("ProxyServer", $"{_proxyServer}", RegistryValueKind.String);
 		key.SetValue("ProxyOverride", "localhost;127.*;10.*;172.16.*;172.31.*;192.168.*;<local>", RegistryValueKind.String);
 	}
 
@@ -151,4 +151,3 @@ public class ProxyService : IProxyService
 		NotifySystemProxyChanged();
 	}
 }
-
