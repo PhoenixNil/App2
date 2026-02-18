@@ -120,9 +120,8 @@ public sealed partial class ServerListControl : UserControl
         if (ServersListView.ItemsSource is IList collection)
         {
             var oldIndex = collection.IndexOf(_draggedItem);
-            var newIndex = -1;
-
-            if (targetItem != null)
+			int newIndex;
+			if (targetItem != null)
             {
                 newIndex = collection.IndexOf(targetItem);
             }

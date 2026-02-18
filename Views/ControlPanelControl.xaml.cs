@@ -1,10 +1,9 @@
 using App2.ViewModels;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 
 namespace App2.Views;
 
-public sealed partial class ControlPanelControl : UserControl
+public sealed partial class ControlPanelControl
 {
 	public ControlPanelControl()
 	{

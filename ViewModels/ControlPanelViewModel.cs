@@ -104,10 +104,10 @@ public partial class ControlPanelViewModel : ObservableObject
 		set => SetProperty(ref _isThemePickerOpen, value);
 	}
 
-	public bool IsRunning
+	private bool IsRunning
 	{
 		get => _isRunning;
-		private set
+		set
 		{
 			if (SetProperty(ref _isRunning, value))
 			{
@@ -280,17 +280,17 @@ public partial class ControlPanelViewModel : ObservableObject
 			return;
 		}
 
-			try
-			{
-				bool isTunMode = _isTunEnabled;
-				string? outboundInterface = null;
-				string? tunInterfaceName = null;
-				string? tunInterfaceAddress = null;
+		try
+		{
+			bool isTunMode = _isTunEnabled;
+			string? outboundInterface = null;
+			string? tunInterfaceName = null;
+			string? tunInterfaceAddress = null;
 
-				if (!IsLocalPortAvailable(_localPort))
-				{
-					throw new InvalidOperationException($"本地端口 {_localPort} 已被占用。请先关闭占用该端口的程序（常见为残留 sslocal.exe），或修改本地端口后重试。");
-				}
+			if (!IsLocalPortAvailable(_localPort))
+			{
+				throw new InvalidOperationException($"本地端口 {_localPort} 已被占用。请先关闭占用该端口的程序（常见为残留 sslocal.exe），或修改本地端口后重试。");
+			}
 
 			// TUN 模式前置检查
 			if (isTunMode)
@@ -349,52 +349,52 @@ public partial class ControlPanelViewModel : ObservableObject
 				throw new InvalidOperationException($"配置文件创建失败: {configPath}");
 			}
 
-				// 启动引擎（TUN 模式带额外参数）
-					_engineService.Start(
-						configPath,
-						isTunMode,
-						outboundInterface,
-						tunInterfaceName,
-						tunInterfaceAddress,
-						requireAdmin: isTunMode);
+			// 启动引擎（TUN 模式带额外参数）
+			_engineService.Start(
+				configPath,
+				isTunMode,
+				outboundInterface,
+				tunInterfaceName,
+				tunInterfaceAddress,
+				requireAdmin: isTunMode);
 
-				// 启动后快速健康检查，避免进程秒退时仍误标记为“已运行”。
-				await Task.Delay(isTunMode ? 800 : 300);
-				if (!_engineService.IsRunning)
+			// 启动后快速健康检查，避免进程秒退时仍误标记为“已运行”。
+			await Task.Delay(isTunMode ? 800 : 300);
+			if (!_engineService.IsRunning)
+			{
+				throw new InvalidOperationException($"sslocal 启动后立即退出。请检查本地端口 {_localPort} 是否被占用，或服务器节点配置是否正确。");
+			}
+
+			// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
+			if (!isTunMode)
+			{
+				var effectiveProxyMode = GetEffectiveProxyMode(isTunMode);
+				var useGlobalSocksPac = ShouldUseGlobalSocksPac(isTunMode);
+				EnqueueLog("PROXY", $"非 TUN 代理模式: 当前={_currentProxyMode}, 生效={effectiveProxyMode}, 全局SOCKS-PAC={useGlobalSocksPac}");
+				if (effectiveProxyMode == ProxyMode.PAC)
 				{
-					throw new InvalidOperationException($"sslocal 启动后立即退出。请检查本地端口 {_localPort} 是否被占用，或服务器节点配置是否正确。");
-				}
-
-				// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
-				if (!isTunMode)
-				{
-					var effectiveProxyMode = GetEffectiveProxyMode(isTunMode);
-					var useGlobalSocksPac = ShouldUseGlobalSocksPac(isTunMode);
-					EnqueueLog("PROXY", $"非 TUN 代理模式: 当前={_currentProxyMode}, 生效={effectiveProxyMode}, 全局SOCKS-PAC={useGlobalSocksPac}");
-					if (effectiveProxyMode == ProxyMode.PAC)
+					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}", useGlobalSocksPac);
+					_proxyService.SetPACUrl(_pacServerService.PACUrl);
+					EnqueueLog("PAC", $"PAC URL: {_pacServerService.PACUrl}");
+					if (useGlobalSocksPac)
 					{
-						await _pacServerService.StartAsync($"127.0.0.1:{_localPort}", useGlobalSocksPac);
-						_proxyService.SetPACUrl(_pacServerService.PACUrl);
-						EnqueueLog("PAC", $"PAC URL: {_pacServerService.PACUrl}");
-						if (useGlobalSocksPac)
-						{
-							EnqueueLog("PAC", "非 TUN 全局模式使用全局 SOCKS5 PAC 以提升兼容性");
-						}
+						EnqueueLog("PAC", "非 TUN 全局模式使用全局 SOCKS5 PAC 以提升兼容性");
 					}
-					else
-					{
-						await _pacServerService.StopAsync();
-					}
-
-					_proxyService.SetProxyServer("127.0.0.1", _localPort);
-					_proxyService.SetProxyMode(effectiveProxyMode);
 				}
 				else
 				{
-					// TUN 模式确保不设置系统代理
 					await _pacServerService.StopAsync();
-					_proxyService.ClearProxy();
 				}
+
+				_proxyService.SetProxyServer("127.0.0.1", _localPort);
+				_proxyService.SetProxyMode(effectiveProxyMode);
+			}
+			else
+			{
+				// TUN 模式确保不设置系统代理
+				await _pacServerService.StopAsync();
+				_proxyService.ClearProxy();
+			}
 
 			_serverList.SetActiveServer(server);
 

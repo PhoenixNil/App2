@@ -21,8 +21,8 @@ public class ConfigWriter : IConfigWriter
         _configPath = Path.Combine(appFolder, "sslocal.json");
 
         // 诊断输出
-        System.Diagnostics.Debug.WriteLine($"[ConfigWriter] 应用数据目录: {appFolder}");
-        System.Diagnostics.Debug.WriteLine($"[ConfigWriter] 配置文件路径: {_configPath}");
+        Debug.WriteLine($"[ConfigWriter] 应用数据目录: {appFolder}");
+        Debug.WriteLine($"[ConfigWriter] 配置文件路径: {_configPath}");
     }
 
     /// <summary>

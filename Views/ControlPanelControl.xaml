@@ -4,7 +4,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:viewmodels="using:App2.ViewModels"
              mc:Ignorable="d">
 
     <Border Margin="0,10,0,0"
@@ -84,7 +83,7 @@
                 </Button>
             </StackPanel>
 
-            <TeachingTip Title="色彩模式"
+            <TeachingTip Grid.Row="0" Title="色彩模式"
                          PreferredPlacement="Auto"
                          IsOpen="{x:Bind ViewModel.IsThemePickerOpen, Mode=TwoWay}"
                          PlacementMargin="20">
@@ -150,8 +149,8 @@
                                     Spacing="2">
                             <TextBlock Text="本地端口："
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                            <TextBlock x:Name="TxtLocalPortValue"
-                                       Text="{x:Bind ViewModel.LocalPortText, Mode=OneWay}"
+                            <TextBlock
+                                Text="{x:Bind ViewModel.LocalPortText, Mode=OneWay}"
                                        FontWeight="SemiBold" />
                         </StackPanel>
                     </Border>
