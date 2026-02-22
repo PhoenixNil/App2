@@ -270,7 +270,7 @@ private async Task RemoveServerAsync()
 		}
 	}
 
-	public ServerEntry? ParseSSUrl(string ssUrl)
+	private ServerEntry? ParseSSUrl(string ssUrl)
 	{
 		if (string.IsNullOrWhiteSpace(ssUrl) || !ssUrl.StartsWith("ss://", StringComparison.OrdinalIgnoreCase))
 		{

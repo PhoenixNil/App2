@@ -94,7 +94,7 @@ public class TunService : ITunService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] 检测网络接口失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] 检测网络接口失败: {ex.Message}");
             return null;
         }
     }
@@ -129,7 +129,7 @@ public class TunService : ITunService
     {
         var wintunPath = Path.Combine(_engineDirectory, "wintun.dll");
         var exists = File.Exists(wintunPath);
-        System.Diagnostics.Debug.WriteLine($"[TunService] wintun.dll 路径: {wintunPath}, 存在: {exists}");
+        Debug.WriteLine($"[TunService] wintun.dll 路径: {wintunPath}, 存在: {exists}");
         return exists;
     }
 
@@ -190,7 +190,7 @@ public class TunService : ITunService
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] 获取默认网关失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] 获取默认网关失败: {ex.Message}");
             return null;
         }
     }
@@ -210,13 +210,13 @@ public class TunService : ITunService
             {
                 var ipProps = tunInterface.GetIPProperties();
                 var ipv4Props = ipProps.GetIPv4Properties();
-                return ipv4Props?.Index;
+                return ipv4Props.Index;
             }
             return null;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] 获取 TUN 接口索引失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] 获取 TUN 接口索引失败: {ex.Message}");
             return null;
         }
     }
@@ -233,7 +233,7 @@ public class TunService : ITunService
             var originalGateway = GetDefaultGateway();
             if (string.IsNullOrEmpty(originalGateway))
             {
-                System.Diagnostics.Debug.WriteLine("[TunService] 无法获取原始网关，跳过路由设置");
+                Debug.WriteLine("[TunService] 无法获取原始网关，跳过路由设置");
                 return false;
             }
 
@@ -241,18 +241,18 @@ public class TunService : ITunService
             var tunInterfaceIndex = GetTunInterfaceIndex();
             if (tunInterfaceIndex == null)
             {
-                System.Diagnostics.Debug.WriteLine("[TunService] 无法获取 TUN 接口索引，跳过路由设置");
+                Debug.WriteLine("[TunService] 无法获取 TUN 接口索引，跳过路由设置");
                 return false;
             }
 
-            System.Diagnostics.Debug.WriteLine($"[TunService] 原始网关: {originalGateway}");
-            System.Diagnostics.Debug.WriteLine($"[TunService] SS 服务器: {serverAddress}");
-            System.Diagnostics.Debug.WriteLine($"[TunService] TUN 接口索引: {tunInterfaceIndex}");
+            Debug.WriteLine($"[TunService] 原始网关: {originalGateway}");
+            Debug.WriteLine($"[TunService] SS 服务器: {serverAddress}");
+            Debug.WriteLine($"[TunService] TUN 接口索引: {tunInterfaceIndex}");
 
             // 1. 为 SS 服务器添加直连路由（通过原网关）
             if (!IsSafeRouteTarget(serverAddress))
             {
-                System.Diagnostics.Debug.WriteLine("[TunService] 服务器地址包含非法字符，已阻止路由设置");
+                Debug.WriteLine("[TunService] 服务器地址包含非法字符，已阻止路由设置");
                 return false;
             }
 
@@ -265,16 +265,16 @@ public class TunService : ITunService
 
             if (!RunRouteCommands(commands))
             {
-                System.Diagnostics.Debug.WriteLine("[TunService] TUN 路由设置失败");
+                Debug.WriteLine("[TunService] TUN 路由设置失败");
                 return false;
             }
 
-            System.Diagnostics.Debug.WriteLine("[TunService] TUN 路由设置完成");
+            Debug.WriteLine("[TunService] TUN 路由设置完成");
             return true;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] 设置 TUN 路由失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] 设置 TUN 路由失败: {ex.Message}");
             return false;
         }
     }
@@ -300,11 +300,11 @@ public class TunService : ITunService
 
             RunRouteCommands(commands);
 
-            System.Diagnostics.Debug.WriteLine("[TunService] TUN 路由清理完成");
+            Debug.WriteLine("[TunService] TUN 路由清理完成");
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] 清理 TUN 路由失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] 清理 TUN 路由失败: {ex.Message}");
         }
     }
 
@@ -368,7 +368,7 @@ public class TunService : ITunService
         var commandLine = string.Join(" & ", commands.Select(command => $"route {command}"));
         var cmdPath = Path.Combine(Environment.SystemDirectory, "cmd.exe");
 
-        var psi = new System.Diagnostics.ProcessStartInfo
+        var psi = new ProcessStartInfo
         {
             FileName = cmdPath,
             Arguments = "/c " + commandLine,
@@ -379,24 +379,24 @@ public class TunService : ITunService
 
         try
         {
-            using var process = System.Diagnostics.Process.Start(psi);
+            using var process = Process.Start(psi);
             if (process == null)
             {
                 return false;
             }
 
             process.WaitForExit(5000);
-            System.Diagnostics.Debug.WriteLine($"[TunService] route 批处理退出代码: {process.ExitCode}");
+            Debug.WriteLine($"[TunService] route 批处理退出代码: {process.ExitCode}");
             return process.ExitCode == 0;
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            System.Diagnostics.Debug.WriteLine("[TunService] 管理员授权被取消");
+            Debug.WriteLine("[TunService] 管理员授权被取消");
             return false;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] route 执行失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] route 执行失败: {ex.Message}");
             return false;
         }
     }
@@ -405,7 +405,7 @@ public class TunService : ITunService
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo
+            var psi = new ProcessStartInfo
             {
                 FileName = "route",
                 Arguments = arguments,
@@ -415,14 +415,14 @@ public class TunService : ITunService
                 RedirectStandardError = true
             };
 
-            using var process = System.Diagnostics.Process.Start(psi);
+            using var process = Process.Start(psi);
             process?.WaitForExit(5000);
-            System.Diagnostics.Debug.WriteLine($"[TunService] route {arguments} - 退出代码: {process?.ExitCode}");
+            Debug.WriteLine($"[TunService] route {arguments} - 退出代码: {process?.ExitCode}");
             return process?.ExitCode == 0;
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[TunService] route 命令执行失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] route 命令执行失败: {ex.Message}");
             return false;
         }
     }

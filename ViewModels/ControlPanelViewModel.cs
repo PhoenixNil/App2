@@ -237,6 +237,8 @@ public partial class ControlPanelViewModel : ObservableObject
 	{
 		try
 		{
+			CleanupTunRoutesSafely("应用退出");
+
 			if (IsRunning)
 			{
 				_engineService.Stop();
@@ -419,6 +421,8 @@ public partial class ControlPanelViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			Debug.WriteLine($"启动失败: {ex.Message}");
+			CleanupTunRoutesSafely("启动失败回滚");
+
 			try
 			{
 				if (_engineService.IsRunning)
@@ -446,12 +450,7 @@ public partial class ControlPanelViewModel : ObservableObject
 	{
 		try
 		{
-			// TUN 模式清理路由
-			if (_currentTunServerHost != null)
-			{
-				_tunService.CleanupTunRoutes(_currentTunServerHost);
-				_currentTunServerHost = null;
-			}
+			CleanupTunRoutesSafely("手动停止");
 
 			_engineService.Stop();
 			_proxyService.ClearProxy();
@@ -470,6 +469,29 @@ public partial class ControlPanelViewModel : ObservableObject
 			StartStopButtonChecked = false;
 			StatusText = "状态：未运行";
 			StatusIconColor = Color.FromArgb(255, 255, 0, 0);
+		}
+	}
+
+	private void CleanupTunRoutesSafely(string reason)
+	{
+		if (_currentTunServerHost == null)
+		{
+			return;
+		}
+
+		try
+		{
+			_tunService.CleanupTunRoutes(_currentTunServerHost);
+			EnqueueLog("TUN", $"已清理 TUN 路由（{reason}）");
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"清理 TUN 路由失败: {ex.Message}");
+			EnqueueLog("TUN", $"清理 TUN 路由失败（{reason}）: {ex.Message}");
+		}
+		finally
+		{
+			_currentTunServerHost = null;
 		}
 	}
 
@@ -620,7 +642,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		}
 	}
 
-	private bool ShouldUseGlobalSocksPac(bool isTunMode)
+	private bool ShouldUseGlobalSocksPac(bool _)
 	{
 		// 桌面客户端（如 Telegram Desktop）对系统 PAC 兼容性不稳定，
 		// 非 TUN 全局模式统一保持手动全局代理，ACL 仍由 sslocal 处理。
