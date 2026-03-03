@@ -16,6 +16,7 @@ public class PACServerService : IDisposable
 	private CancellationTokenSource? _cancellationTokenSource;
 	private Task? _listenerTask;
 	private string _pacContent = string.Empty;
+	private byte[] _pacContentBytes = Array.Empty<byte>();
 	private int _pacVersion = 0;
 	private readonly int _port;
 
@@ -47,6 +48,10 @@ public class PACServerService : IDisposable
 		var newPacContent = await GeneratePACContentAsync(proxyAddress, forceGlobalSocks);
 		var pacChanged = !string.Equals(_pacContent, newPacContent, StringComparison.Ordinal);
 		_pacContent = newPacContent;
+		if (pacChanged || _pacContentBytes.Length == 0)
+		{
+			_pacContentBytes = Encoding.UTF8.GetBytes(_pacContent);
+		}
 		if (pacChanged)
 		{
 			_pacVersion++;
@@ -174,7 +179,7 @@ $@"function FindProxyForURL(url, host) {{
 			try
 			{
 				var context = await _httpListener.GetContextAsync();
-				_ = Task.Run(() => ProcessRequestAsync(context), cancellationToken);
+				await ProcessRequestAsync(context);
 			}
 			catch (HttpListenerException)
 			{
@@ -202,15 +207,15 @@ $@"function FindProxyForURL(url, host) {{
 	/// </summary>
 	private async Task ProcessRequestAsync(HttpListenerContext context)
 	{
+		var response = context.Response;
 		try
 		{
 			var request = context.Request;
-			var response = context.Response;
 
 			// 只处理 pac.js 请求
 			if (request.Url?.AbsolutePath == "/pac.js" || request.Url?.AbsolutePath == "/")
 			{
-				var buffer = Encoding.UTF8.GetBytes(_pacContent);
+				var buffer = _pacContentBytes;
 				response.ContentType = "application/x-ns-proxy-autoconfig";
 				response.ContentLength64 = buffer.Length;
 				response.ContentEncoding = Encoding.UTF8;
@@ -219,18 +224,27 @@ $@"function FindProxyForURL(url, host) {{
 				response.Headers["Expires"] = "0";
 				response.StatusCode = 200;
 
-				await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+				await response.OutputStream.WriteAsync(buffer.AsMemory(0, buffer.Length));
 			}
 			else
 			{
 				response.StatusCode = 404;
 			}
-
-			response.Close();
 		}
 		catch (Exception ex)
 		{
 			System.Diagnostics.Debug.WriteLine($"[PAC] 处理请求时出错: {ex.Message}");
+		}
+		finally
+		{
+			try
+			{
+				response.Close();
+			}
+			catch
+			{
+				// Ignore close errors.
+			}
 		}
 	}
 

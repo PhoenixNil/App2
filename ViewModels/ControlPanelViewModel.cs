@@ -248,10 +248,13 @@ public partial class ControlPanelViewModel : ObservableObject
 		finally
 		{
 			await _pacServerService.StopAsync().ConfigureAwait(false);
+			_engineService.LogReceived -= OnEngineLogReceived;
+			_pacServerService.LogReceived -= OnPacLogReceived;
+			_serverList.Servers.CollectionChanged -= OnServersCollectionChanged;
+			_themeService.ThemeChanged -= ThemeServiceOnThemeChanged;
 			_engineService.Dispose();
 			_pacServerService.Dispose();
 			_configWriter.DeleteConfig();
-			_themeService.ThemeChanged -= ThemeServiceOnThemeChanged;
 		}
 	}
 

@@ -14,6 +14,7 @@ namespace App2.ViewModels;
 
 public partial class ServerListViewModel : ObservableObject
 {
+	private const int MaxSearchSuggestions = 20;
 	private readonly IConfigStorage _configStorage;
 	private readonly IDialogService _dialogService;
 
@@ -104,7 +105,8 @@ public partial class ServerListViewModel : ObservableObject
 	{
 		return Servers
 			.Where(server => !string.IsNullOrEmpty(server.Name) && server.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-			.ToList();
+			.Take(MaxSearchSuggestions)
+			.ToArray();
 	}
 
 	public void SetActiveServer(ServerEntry? server)
