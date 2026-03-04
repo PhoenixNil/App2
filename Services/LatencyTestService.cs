@@ -94,7 +94,7 @@ public class LatencyTestService
 	/// <param name="timeoutMs">超时时间（毫秒）</param>
 	/// <param name="cancellationToken">取消令牌</param>
 	/// <returns>延迟测试结果</returns>
-	public async Task<LatencyTestResult> TestLatencyAsync(
+	private async Task<LatencyTestResult> TestLatencyAsync(
 		string host,
 		int port,
 		int timeoutMs = DefaultTimeoutMs,

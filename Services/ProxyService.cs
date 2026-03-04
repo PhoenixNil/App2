@@ -28,7 +28,7 @@ public enum ProxyMode
 /// <summary>
 /// 负责设置和清除系统代理
 /// </summary>
-public class ProxyService
+public class ProxyService : IProxyService
 {
 	private const string RegistryPath = @"Software\Microsoft\Windows\CurrentVersion\Internet Settings";
 
@@ -86,7 +86,7 @@ public class ProxyService
 		using var key = Registry.CurrentUser.OpenSubKey(RegistryPath, true);
 		if (key == null) return;
 
-		// Shadowsocks 使用 SOCKS5 代理
+		// 使用 host:port 以兼容更多仅识别 WinINET 全局代理的应用。
 		key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
 		key.SetValue("ProxyServer", $"{_proxyServer}", RegistryValueKind.String);
 		key.SetValue("ProxyOverride", "localhost;127.*;10.*;172.16.*;172.31.*;192.168.*;<local>", RegistryValueKind.String);
@@ -151,4 +151,3 @@ public class ProxyService
 		NotifySystemProxyChanged();
 	}
 }
-

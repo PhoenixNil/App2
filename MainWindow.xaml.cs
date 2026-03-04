@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Windows.Graphics;
 using WinRT.Interop;
 using System.IO;
@@ -17,16 +16,10 @@ public sealed partial class MainWindow : Window
 {
 	public MainWindowViewModel ViewModel { get; }
 
-	public MainWindow()
+	public MainWindow(MainWindowViewModel viewModel)
 	{
+		ViewModel = viewModel;
 		InitializeComponent();
-		ControlPanel.ThemeChangeRequested += ControlPanel_ThemeChangeRequested;
-
-		// Initialize ViewModel
-		ViewModel = new MainWindowViewModel();
-
-		// Apply theme
-		ApplyTheme(ViewModel.CurrentTheme);
 
 		// Set window default size (DIP 950x600), considering system DPI scaling
 		var hWnd = WindowNative.GetWindowHandle(this);
@@ -67,6 +60,17 @@ public sealed partial class MainWindow : Window
 			// 最小化并隐藏窗口（不在任务切换器中显示）
 			wm.WindowState = WinUIEx.WindowState.Minimized;
 			appWindow.Hide();
+
+			// 强制清理工作集内存，大幅降低后台运行时的内存占用
+			try
+			{
+				using var process = System.Diagnostics.Process.GetCurrentProcess();
+				SetProcessWorkingSetSize(process.Handle, (IntPtr)(-1), (IntPtr)(-1));
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine($"清理工作集内存失败: {ex.Message}");
+			}
 		};
 
 		// 添加系统托盘右键菜单
@@ -95,21 +99,6 @@ public sealed partial class MainWindow : Window
 	private async void MainWindow_Closed(object sender, WindowEventArgs args)
 	{
 		await ViewModel.CleanupAsync();
-	}
-
-	private void ApplyTheme(ElementTheme theme)
-	{
-		if (Content is FrameworkElement root)
-		{
-			root.RequestedTheme = theme;
-			ControlPanel?.UpdateThemeButtonsState(root.ActualTheme);
-		}
-	}
-
-	private void ControlPanel_ThemeChangeRequested(object? sender, ElementTheme theme)
-	{
-		ViewModel.ApplyTheme(theme);
-		ApplyTheme(theme);
 	}
 
 
@@ -144,22 +133,9 @@ public sealed partial class MainWindow : Window
 	[DllImport("user32.dll")]
 	private static extern int GetDpiForWindow(IntPtr hWnd);
 
-	#endregion
-}
+	[DllImport("kernel32.dll")]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool SetProcessWorkingSetSize(IntPtr process, IntPtr minimumWorkingSetSize, IntPtr maximumWorkingSetSize);
 
-// Extension method for executing async commands
-public static class CommandExtensions
-{
-	public static async Task ExecuteAsync(this System.Windows.Input.ICommand command, object? parameter)
-	{
-		if (command is AsyncRelayCommand asyncCommand)
-		{
-			// Execute the async command and await its completion
-			await asyncCommand.ExecuteAsync();
-		}
-		else
-		{
-			command.Execute(parameter);
-		}
-	}
+	#endregion
 }

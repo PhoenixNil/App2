@@ -12,7 +12,12 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <WindowsPackageType>None</WindowsPackageType>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Remove="Assets\engine\wintun.dll" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
@@ -36,9 +41,12 @@
     <ProjectCapability Include="Msix" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6901" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
     <PackageReference Include="WinUIEx" Version="2.9.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+
   </ItemGroup>
   <ItemGroup>
     <Folder Include="models\" />
@@ -73,6 +81,14 @@
       <!-- 单项目 MSIX 打包：确保被写入安装包资源 -->
       <PackagePath>Assets\engine\</PackagePath>
     </None>
+    <None Include="Assets\engine\wintun.dll">
+      <!-- 非打包运行（bin\...）需要 -->
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <!-- dotnet publish 需要 -->
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+      <!-- 单项目 MSIX 打包：确保被写入安装包资源 -->
+      <PackagePath>Assets\engine\</PackagePath>
+    </None>
     <None Include="pac.txt">
       <!-- 非打包运行（bin\...）需要 -->
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -81,6 +97,11 @@
     </None>
     <None Include="shadowsocks.acl">
       <!-- ACL 文件：用于全局模式的直连规则 -->
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
+    <None Include="Assets\rules\cn_ip_cidr.txt">
+      <!-- CN-IP 数据源：用于生成 TUN 分流 ACL -->
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </None>
