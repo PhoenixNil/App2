@@ -60,3 +60,4 @@ project.fragment.lock.json
 /Properties/PublishProfiles/FolderProfile.pubxml
 *.md
 *.markdown
+diagnose.ps1
