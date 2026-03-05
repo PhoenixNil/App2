@@ -3,6 +3,7 @@ using App2.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using System;
+using System.Linq;
 
 namespace App2;
 
@@ -25,6 +26,15 @@ public partial class App : Application
 		windowContext.Attach(_window);
 		var themeService = Services.GetRequiredService<IThemeService>();
 		themeService.ApplyTheme(themeService.CurrentTheme);
+
+		// 检查命令行参数：以管理员身份重启后自动开启 TUN 模式
+		var cmdArgs = Environment.GetCommandLineArgs();
+		if (cmdArgs.Contains("--tun", StringComparer.OrdinalIgnoreCase))
+		{
+			var controlPanel = Services.GetRequiredService<ControlPanelViewModel>();
+			controlPanel.SetTunEnabledSilently(true);
+		}
+
 		_window.Activate();
 	}
 
