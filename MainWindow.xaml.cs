@@ -1,3 +1,4 @@
+﻿using App2.Services;
 using App2.ViewModels;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -12,29 +13,35 @@ using Microsoft.UI;
 
 namespace App2;
 
-public sealed partial class MainWindow : Window
+public sealed partial class MainWindow
 {
+	private readonly AppWindow _appWindow;
+	private readonly IThemeService _themeService;
+
 	public MainWindowViewModel ViewModel { get; }
 
-	public MainWindow(MainWindowViewModel viewModel)
+	public MainWindow(MainWindowViewModel viewModel, IThemeService themeService)
 	{
 		ViewModel = viewModel;
+		_themeService = themeService;
 		InitializeComponent();
 
 		// Set window default size (DIP 950x600), considering system DPI scaling
 		var hWnd = WindowNative.GetWindowHandle(this);
 		var id = Win32Interop.GetWindowIdFromWindow(hWnd);
-		var appWindow = AppWindow.GetFromWindowId(id);
+		_appWindow = AppWindow.GetFromWindowId(id);
 		var dpiScale = GetWindowScale(hWnd);
 		var widthPx = (int)Math.Round(950 * dpiScale);
 		var heightPx = (int)Math.Round(600 * dpiScale);
-		appWindow.Resize(new SizeInt32(widthPx, heightPx));
+		_appWindow.Resize(new SizeInt32(widthPx, heightPx));
 
 		//Set taskbar Icon;
 		string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Icons", "output.ico");
-		appWindow.SetIcon(iconPath);
+		_appWindow.SetIcon(iconPath);
 		ExtendsContentIntoTitleBar = true;
 		SetTitleBar(AppTitleBar);
+		_themeService.ThemeChanged += ThemeServiceOnThemeChanged;
+		UpdateTitleBarTheme(_themeService.ActualTheme);
 
 		//配置系统托盘（通过WindowManager，不需要继承WindowEx）
 		SetupTrayIcon();
@@ -52,7 +59,7 @@ public sealed partial class MainWindow : Window
 		// 显示系统托盘图标
 		wm.IsVisibleInTray = true;
 		var appWindow = wm.AppWindow;
-		appWindow.Closing += (sender, args) =>
+		appWindow.Closing += (_, args) =>
 		{
 			// 取消关闭操作
 			args.Cancel = true;
@@ -98,7 +105,28 @@ public sealed partial class MainWindow : Window
 
 	private async void MainWindow_Closed(object sender, WindowEventArgs args)
 	{
+		_themeService.ThemeChanged -= ThemeServiceOnThemeChanged;
 		await ViewModel.CleanupAsync();
+	}
+
+	private void ThemeServiceOnThemeChanged(object? sender, EventArgs e)
+	{
+		UpdateTitleBarTheme(_themeService.ActualTheme);
+	}
+
+	private void UpdateTitleBarTheme(ElementTheme actualTheme)
+	{
+		if (!AppWindowTitleBar.IsCustomizationSupported())
+		{
+			return;
+		}
+
+		_appWindow.TitleBar.PreferredTheme = actualTheme switch
+		{
+			ElementTheme.Light => TitleBarTheme.Light,
+			ElementTheme.Dark => TitleBarTheme.Dark,
+			_ => TitleBarTheme.UseDefaultAppMode
+		};
 	}
 
 
@@ -139,3 +167,5 @@ public sealed partial class MainWindow : Window
 
 	#endregion
 }
+
+
