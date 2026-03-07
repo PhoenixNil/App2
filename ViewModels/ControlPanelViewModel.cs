@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using App2.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -52,6 +53,7 @@ public partial class ControlPanelViewModel : ObservableObject
 	private bool _isAutoStartEnabled;
 	private bool _isAutoStartStateInternalUpdate;
 	private bool _isTunEnabled;
+	private bool _isTunInternalUpdate;
 	private string? _currentTunServerHost; // TUN 模式运行时的服务器地址（用于清理路由）
 
 	public ControlPanelViewModel(
@@ -162,8 +164,24 @@ public partial class ControlPanelViewModel : ObservableObject
 			if (SetProperty(ref _isTunEnabled, value))
 			{
 				OnPropertyChanged(nameof(IsRouteModeBadgeVisible));
+
+				// 如果不是内部更新，说明是用户通过 UI 直接切换的，需要触发命令逻辑
+				if (!_isTunInternalUpdate)
+				{
+					_ = HandleTunToggleAsync(value);
+				}
 			}
 		}
+	}
+
+	/// <summary>
+	/// 供 App.xaml.cs 在检测到 --tun 启动参数时调用，静默设置 TUN 状态
+	/// </summary>
+	public void SetTunEnabledSilently(bool value)
+	{
+		_isTunInternalUpdate = true;
+		IsTunEnabled = value;
+		_isTunInternalUpdate = false;
 	}
 
 	public bool IsAutoStartEnabled
@@ -768,5 +786,86 @@ public partial class ControlPanelViewModel : ObservableObject
 	private void ChangeRouteMode(bool isBypass)
 	{
 		IsBypassChinaMode = isBypass;
+	}
+
+	/// <summary>
+	/// 处理 TUN 模式 toggle 逻辑：
+	/// - 关闭 TUN → 直接关闭
+	/// - 已是管理员 → 直接开启
+	/// - 非管理员 → 弹确认框 → 以管理员身份重启应用
+	/// </summary>
+	private async Task HandleTunToggleAsync(bool wantEnable)
+	{
+		// 关闭 TUN 或已经是管理员 → 无需特殊处理
+		if (!wantEnable || IsCurrentProcessAdmin())
+		{
+			return;
+		}
+
+		// 非管理员开启 TUN：先回退开关状态，再弹确认框
+		_isTunInternalUpdate = true;
+		IsTunEnabled = false;
+		_isTunInternalUpdate = false;
+
+		var confirmed = await _dialogService.ShowConfirmationAsync(
+			"开启 TUN 模式",
+			"开启 TUN 模式需要管理员权限，程序将会重启，是否继续？",
+			"继续",
+			"取消");
+
+		if (!confirmed)
+		{
+			return;
+		}
+
+		// 以管理员身份重启应用，带 --tun 参数
+		RestartAsAdmin("--tun");
+	}
+
+	private static bool IsCurrentProcessAdmin()
+	{
+		try
+		{
+			using var identity = WindowsIdentity.GetCurrent();
+			var principal = new WindowsPrincipal(identity);
+			return principal.IsInRole(WindowsBuiltInRole.Administrator);
+		}
+		catch
+		{
+			return false;
+		}
+	}
+
+	private static void RestartAsAdmin(string arguments)
+	{
+		try
+		{
+			var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+			if (string.IsNullOrEmpty(exePath))
+			{
+				return;
+			}
+
+			var psi = new ProcessStartInfo
+			{
+				FileName = exePath,
+				Arguments = arguments,
+				UseShellExecute = true,
+				Verb = "runas"
+			};
+
+			Process.Start(psi);
+			// 退出当前进程
+			Environment.Exit(0);
+		}
+		catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+		{
+			// 用户取消了 UAC，不做任何处理
+			Debug.WriteLine("[TUN] 用户取消了管理员授权");
+		}
+		catch (Exception ex)
+		{
+			Debug.WriteLine($"[TUN] 以管理员身份重启失败: {ex.Message}");
+		}
 	}
 }

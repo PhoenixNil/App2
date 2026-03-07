@@ -39,7 +39,13 @@ public class DialogService : IDialogService
     public async Task<bool> ShowConfirmationAsync(string title, string message, string confirmText = "确定",
         string cancelText = "取消", bool isDanger = false)
     {
-        var dialog = CreateDialog(title, message);
+        var content = new TextBlock
+        {
+            Text = message,
+            TextWrapping = TextWrapping.Wrap,
+            MaxWidth = 280
+        };
+        var dialog = CreateDialog(title, content);
         dialog.PrimaryButtonText = confirmText;
         dialog.CloseButtonText = cancelText;
         dialog.DefaultButton = isDanger ? ContentDialogButton.None : ContentDialogButton.Primary;

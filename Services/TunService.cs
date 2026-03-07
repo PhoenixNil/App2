@@ -33,7 +33,7 @@ public class TunService : ITunService
     /// <summary>
     /// DNS 服务器列表（用于防止 DNS 泄漏）
     /// </summary>
-    public string[] DnsServers => new[] { "223.5.5.5", "119.29.29.29" };
+    public string[] DnsServers => ["223.5.5.5", "119.29.29.29"];
 
     public TunService()
     {
