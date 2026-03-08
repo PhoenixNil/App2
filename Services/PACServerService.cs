@@ -250,8 +250,12 @@ $@"function FindProxyForURL(url, host) {{
 
 	public void Dispose()
 	{
-		StopAsync().GetAwaiter().GetResult();
+		_cancellationTokenSource?.Cancel();
+		try { _httpListener?.Stop(); } catch { }
 		_httpListener?.Close();
 		_cancellationTokenSource?.Dispose();
+		_httpListener = null;
+		_listenerTask = null;
+		_cancellationTokenSource = null;
 	}
 }

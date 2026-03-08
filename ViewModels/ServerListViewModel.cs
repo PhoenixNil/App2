@@ -71,8 +71,8 @@ public partial class ServerListViewModel : ObservableObject
 		}
 	}
 
-	public bool CanEditServer => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
-	public bool CanRemoveServer => SelectedServer != null && !(IsRunning && SelectedServer == ActiveServer);
+	public bool CanEditServer => CanModifySelectedServer();
+	public bool CanRemoveServer => CanModifySelectedServer();
 
 	public event EventHandler? SelectedServerChanged;
 
@@ -228,6 +228,7 @@ private async Task RemoveServerAsync()
 			target.OnPropertyChanged(nameof(ServerEntry.Name));
 			target.OnPropertyChanged(nameof(ServerEntry.Host));
 			target.OnPropertyChanged(nameof(ServerEntry.Port));
+			target.OnPropertyChanged(nameof(ServerEntry.Password));
 			target.OnPropertyChanged(nameof(ServerEntry.Method));
 			SelectedServer = target;
 			SaveServersSafely();

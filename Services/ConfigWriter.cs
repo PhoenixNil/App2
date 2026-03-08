@@ -38,10 +38,6 @@ public class ConfigWriter : IConfigWriter
         if (!string.IsNullOrWhiteSpace(aclPath))
         {
             aclPath = Path.GetFullPath(aclPath);
-            if (!Path.IsPathRooted(aclPath))
-            {
-                throw new InvalidOperationException("ACL 路径必须为绝对路径。");
-            }
         }
 
         var config = new SSConfig
