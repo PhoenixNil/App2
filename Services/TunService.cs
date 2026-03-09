@@ -1,10 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
-using System.Security.Principal;
+using App2.Helpers;
 using Windows.ApplicationModel;
 
 namespace App2.Services;
@@ -38,7 +39,7 @@ public class TunService : ITunService
     public TunService()
     {
         // 尝试多个可能的路径来定位 engine 目录
-        var possiblePaths = new System.Collections.Generic.List<string>();
+        var possiblePaths = new List<string>();
 
         try
         {
@@ -79,16 +80,17 @@ public class TunService : ITunService
                     && !ni.Description.Contains("VPN", StringComparison.OrdinalIgnoreCase)
                     && !ni.Description.Contains("TAP", StringComparison.OrdinalIgnoreCase)
                     && !ni.Description.Contains("TUN", StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(ni => ni.GetIPProperties().GatewayAddresses.Count)
-                .ThenByDescending(ni => ni.Speed)
+                .Select(ni => (Interface: ni, Props: ni.GetIPProperties()))
+                .OrderByDescending(x => x.Props.GatewayAddresses.Count)
+                .ThenByDescending(x => x.Interface.Speed)
                 .ToList();
 
             // 优先选择有网关的接口（通常是主要的上网接口）
-            var primaryInterface = interfaces.FirstOrDefault(ni =>
-                ni.GetIPProperties().GatewayAddresses.Any(g =>
+            var primary = interfaces.FirstOrDefault(x =>
+                x.Props.GatewayAddresses.Any(g =>
                     g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork));
 
-            var detected = primaryInterface?.Name ?? interfaces.FirstOrDefault()?.Name;
+            var detected = primary.Interface?.Name ?? interfaces.FirstOrDefault().Interface?.Name;
             CacheOutboundInterface(detected);
             return detected;
         }
@@ -161,9 +163,9 @@ public class TunService : ITunService
     }
 
     /// <summary>
-    /// TUN 网关地址（从 DefaultTunInterfaceAddress 提取）
+    /// TUN 网关地址（从 DefaultTunInterfaceAddress 的 CIDR 前缀提取）
     /// </summary>
-    public string TunGateway => "10.255.0.1";
+    public string TunGateway => DefaultTunInterfaceAddress.Split('/')[0];
 
     /// <summary>
     /// 获取当前默认网关地址
@@ -287,7 +289,7 @@ public class TunService : ITunService
     {
         try
         {
-            var commands = new System.Collections.Generic.List<string>
+            var commands = new List<string>
             {
                 "delete 0.0.0.0 mask 128.0.0.0",
                 "delete 128.0.0.0 mask 128.0.0.0"
@@ -305,20 +307,6 @@ public class TunService : ITunService
         catch (Exception ex)
         {
             Debug.WriteLine($"[TunService] 清理 TUN 路由失败: {ex.Message}");
-        }
-    }
-
-    private static bool IsAdministrator()
-    {
-        try
-        {
-            using var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-        catch
-        {
-            return false;
         }
     }
 
@@ -340,19 +328,19 @@ public class TunService : ITunService
         return true;
     }
 
-    private bool RunRouteCommands(System.Collections.Generic.IReadOnlyList<string> commands)
+    private bool RunRouteCommands(IReadOnlyList<string> commands)
     {
         if (commands.Count == 0)
         {
             return true;
         }
 
-        return IsAdministrator()
+        return AdminHelper.IsAdministrator()
             ? RunRouteCommandsDirect(commands)
             : RunRouteCommandsElevated(commands);
     }
 
-    private bool RunRouteCommandsDirect(System.Collections.Generic.IReadOnlyList<string> commands)
+    private bool RunRouteCommandsDirect(IReadOnlyList<string> commands)
     {
         var success = true;
         foreach (var command in commands)
@@ -363,7 +351,7 @@ public class TunService : ITunService
         return success;
     }
 
-    private bool RunRouteCommandsElevated(System.Collections.Generic.IReadOnlyList<string> commands)
+    private bool RunRouteCommandsElevated(IReadOnlyList<string> commands)
     {
         var commandLine = string.Join(" & ", commands.Select(command => $"route {command}"));
         var cmdPath = Path.Combine(Environment.SystemDirectory, "cmd.exe");

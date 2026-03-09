@@ -5,8 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Principal;
 using System.Threading.Tasks;
+using App2.Helpers;
 using App2.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -324,11 +324,7 @@ public partial class ControlPanelViewModel : ObservableObject
 					throw new InvalidOperationException($"TUN 模式需要 wintun.dll，请将其放置到: {expectedPath}");
 				}
 
-				outboundInterface = _tunService.DetectOutboundInterface();
-				if (string.IsNullOrEmpty(outboundInterface))
-				{
-					outboundInterface = _tunService.DetectOutboundInterface(forceRefresh: true);
-				}
+				outboundInterface = _tunService.DetectOutboundInterface(forceRefresh: true);
 				if (string.IsNullOrEmpty(outboundInterface))
 				{
 					throw new InvalidOperationException("无法检测到有效的出站网络接口，请检查网络连接");
@@ -391,18 +387,12 @@ public partial class ControlPanelViewModel : ObservableObject
 			// TUN 模式不需要设置系统代理，流量直接通过虚拟网卡
 			if (!isTunMode)
 			{
-				var effectiveProxyMode = GetEffectiveProxyMode(isTunMode);
-				var useGlobalSocksPac = ShouldUseGlobalSocksPac(isTunMode);
-				EnqueueLog("PROXY", $"非 TUN 代理模式: 当前={_currentProxyMode}, 生效={effectiveProxyMode}, 全局SOCKS-PAC={useGlobalSocksPac}");
-				if (effectiveProxyMode == ProxyMode.PAC)
+				EnqueueLog("PROXY", $"非 TUN 代理模式: {_currentProxyMode}");
+				if (_currentProxyMode == ProxyMode.PAC)
 				{
-					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}", useGlobalSocksPac);
+					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
 					_proxyService.SetPACUrl(_pacServerService.PACUrl);
 					EnqueueLog("PAC", $"PAC URL: {_pacServerService.PACUrl}");
-					if (useGlobalSocksPac)
-					{
-						EnqueueLog("PAC", "非 TUN 全局模式使用全局 SOCKS5 PAC 以提升兼容性");
-					}
 				}
 				else
 				{
@@ -410,7 +400,7 @@ public partial class ControlPanelViewModel : ObservableObject
 				}
 
 				_proxyService.SetProxyServer("127.0.0.1", _localPort);
-				_proxyService.SetProxyMode(effectiveProxyMode);
+				_proxyService.SetProxyMode(_currentProxyMode);
 			}
 			else
 			{
@@ -541,9 +531,7 @@ public partial class ControlPanelViewModel : ObservableObject
 		throw new InvalidOperationException("等待 TUN 接口创建超时，sslocal 可能仍在初始化。请重试。");
 	}
 
-	private bool CanEditLocalPort() => true;
-
-	[RelayCommand(CanExecute = nameof(CanEditLocalPort))]
+	[RelayCommand]
 	private async Task EditLocalPortAsync()
 	{
 		var newPort = await _dialogService.ShowLocalPortDialogAsync(_localPort, MinimumLocalPort, MaximumLocalPort);
@@ -636,43 +624,25 @@ public partial class ControlPanelViewModel : ObservableObject
 		{
 			try
 			{
-				var effectiveProxyMode = GetEffectiveProxyMode(_isTunEnabled);
-				var useGlobalSocksPac = ShouldUseGlobalSocksPac(_isTunEnabled);
-				EnqueueLog("PROXY", $"切换代理模式: 当前={_currentProxyMode}, 生效={effectiveProxyMode}, 全局SOCKS-PAC={useGlobalSocksPac}");
-				if (effectiveProxyMode != ProxyMode.PAC)
+				EnqueueLog("PROXY", $"切换代理模式: {_currentProxyMode}");
+				if (_currentProxyMode != ProxyMode.PAC)
 				{
 					await _pacServerService.StopAsync();
 				}
 				else
 				{
-					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}", useGlobalSocksPac);
+					await _pacServerService.StartAsync($"127.0.0.1:{_localPort}");
 					_proxyService.SetPACUrl(_pacServerService.PACUrl);
 					EnqueueLog("PAC", $"PAC URL: {_pacServerService.PACUrl}");
-					if (useGlobalSocksPac)
-					{
-						EnqueueLog("PAC", "运行中切换：非 TUN 全局模式使用全局 SOCKS5 PAC");
-					}
 				}
 
-				_proxyService.SetProxyMode(effectiveProxyMode);
+				_proxyService.SetProxyMode(_currentProxyMode);
 			}
 			catch (Exception ex)
 			{
 				Debug.WriteLine($"切换代理模式失败: {ex.Message}");
 			}
 		}
-	}
-
-	private bool ShouldUseGlobalSocksPac(bool _)
-	{
-		// 桌面客户端（如 Telegram Desktop）对系统 PAC 兼容性不稳定，
-		// 非 TUN 全局模式统一保持手动全局代理，ACL 仍由 sslocal 处理。
-		return false;
-	}
-
-	private ProxyMode GetEffectiveProxyMode(bool isTunMode)
-	{
-		return ShouldUseGlobalSocksPac(isTunMode) ? ProxyMode.PAC : _currentProxyMode;
 	}
 
 	private static bool IsLocalPortAvailable(int port)
@@ -797,7 +767,7 @@ public partial class ControlPanelViewModel : ObservableObject
 	private async Task HandleTunToggleAsync(bool wantEnable)
 	{
 		// 关闭 TUN 或已经是管理员 → 无需特殊处理
-		if (!wantEnable || IsCurrentProcessAdmin())
+		if (!wantEnable || AdminHelper.IsAdministrator())
 		{
 			return;
 		}
@@ -820,20 +790,6 @@ public partial class ControlPanelViewModel : ObservableObject
 
 		// 以管理员身份重启应用，带 --tun 参数
 		RestartAsAdmin("--tun");
-	}
-
-	private static bool IsCurrentProcessAdmin()
-	{
-		try
-		{
-			using var identity = WindowsIdentity.GetCurrent();
-			var principal = new WindowsPrincipal(identity);
-			return principal.IsInRole(WindowsBuiltInRole.Administrator);
-		}
-		catch
-		{
-			return false;
-		}
 	}
 
 	private static void RestartAsAdmin(string arguments)

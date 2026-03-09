@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Principal;
+using App2.Helpers;
 using Windows.ApplicationModel;
 
 namespace App2.Services;
@@ -112,7 +112,7 @@ public class EngineService : IEngineService
             }
         }
 
-        var runElevated = requireAdmin && !IsAdministrator();
+        var runElevated = requireAdmin && !AdminHelper.IsAdministrator();
 
         LogReceived?.Invoke(this, $"配置文件: {configPath}");
         LogReceived?.Invoke(this, $"工作目录: {EngineDirectory}");
@@ -145,10 +145,10 @@ public class EngineService : IEngineService
 
         _process = new Process { StartInfo = startInfo };
 
-        // 监听进程退出
+        // 监听进程退出（使用 sender 避免 _process 字段被置 null 后的竞争）
         _process.Exited += (s, e) =>
         {
-            LogReceived?.Invoke(this, $"[WARN] sslocal 进程已退出，退出代码: {_process.ExitCode}");
+            LogReceived?.Invoke(this, $"[WARN] sslocal 进程已退出，退出代码: {(s as Process)?.ExitCode}");
         };
         _process.EnableRaisingEvents = true;
 
@@ -192,20 +192,6 @@ public class EngineService : IEngineService
         }
 
         LogReceived?.Invoke(this, $"sslocal 已启动，PID: {_process.Id}");
-    }
-
-    private static bool IsAdministrator()
-    {
-        try
-        {
-            using var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            return principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     /// <summary>
