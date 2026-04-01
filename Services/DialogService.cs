@@ -154,7 +154,7 @@ public class DialogService : IDialogService
         {
             Text = "注意：SS2022 密钥需要符合 Base64 长度要求。",
             FontSize = 12,
-            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+            // Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 4, 0, 0)
         };

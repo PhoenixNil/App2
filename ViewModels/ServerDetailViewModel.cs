@@ -13,12 +13,14 @@ public partial class ServerDetailViewModel : ObservableObject, IDisposable
 {
 	private readonly ServerListViewModel _serverList;
 	private readonly LatencyTestService _latencyTestService;
+	private readonly IClipboardService _clipboard;
 	private CancellationTokenSource? _latencyCancellation;
 	private bool _isTesting;
 	private string _selectedName = "未选择";
 	private string _selectedHost = "未选择";
 	private string _selectedPort = "未选择";
 	private string _selectedMethod = "未选择";
+	private string _selectedSsLink = string.Empty;
 
 	private static Color Gray() => Color.FromArgb(255, 128, 128, 128);
 	private static Color Green() => Color.FromArgb(255, 0, 128, 0);
@@ -30,10 +32,11 @@ public partial class ServerDetailViewModel : ObservableObject, IDisposable
 	private string _latencyText = "--";
 	private Color _latencyColor = Gray();
 
-	public ServerDetailViewModel(ServerListViewModel serverList, LatencyTestService latencyTestService)
+	public ServerDetailViewModel(ServerListViewModel serverList, LatencyTestService latencyTestService, IClipboardService clipboard)
 	{
 		_serverList = serverList;
 		_latencyTestService = latencyTestService;
+		_clipboard = clipboard;
 
 		_serverList.SelectedServerChanged += OnSelectedServerChanged;
 		UpdateSelectedServer(_serverList.SelectedServer);
@@ -61,6 +64,12 @@ public partial class ServerDetailViewModel : ObservableObject, IDisposable
 	{
 		get => _selectedMethod;
 		private set => SetProperty(ref _selectedMethod, value);
+	}
+
+	public string SelectedSsLink
+	{
+		get => _selectedSsLink;
+		private set => SetProperty(ref _selectedSsLink, value);
 	}
 
 	public string LatencyText
@@ -92,6 +101,7 @@ public partial class ServerDetailViewModel : ObservableObject, IDisposable
 			SelectedHost = "未选择";
 			SelectedPort = "未选择";
 			SelectedMethod = "未选择";
+			SelectedSsLink = string.Empty;
 			LatencyText = "--";
 			LatencyColor = Gray();
 		}
@@ -101,6 +111,9 @@ public partial class ServerDetailViewModel : ObservableObject, IDisposable
 			SelectedHost = server.Host;
 			SelectedPort = server.Port.ToString();
 			SelectedMethod = server.Method;
+			var userInfo = $"{server.Method}:{server.Password}@{server.Host}:{server.Port}";
+			var encoded = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(userInfo));
+			SelectedSsLink = $"ss://{encoded}#{Uri.EscapeDataString(server.Name)}";
 			LatencyText = "测试中...";
 			LatencyColor = Gray();
 			_ = RunLatencyTestAsync(server);
@@ -178,6 +191,13 @@ public partial class ServerDetailViewModel : ObservableObject, IDisposable
 			LatencyLevel.Timeout => Red(),
 			_ => Gray()
 		};
+	}
+
+	[RelayCommand]
+	private void CopyLink()
+	{
+		if (!string.IsNullOrEmpty(SelectedSsLink))
+			_clipboard.SetText(SelectedSsLink);
 	}
 
 	private void UpdateCommandState()

@@ -73,7 +73,8 @@ public partial class App : Application
 			provider.GetRequiredService<ServerListViewModel>()));
 		services.AddSingleton(provider => new ServerDetailViewModel(
 			provider.GetRequiredService<ServerListViewModel>(),
-			provider.GetRequiredService<LatencyTestService>()));
+			provider.GetRequiredService<LatencyTestService>(),
+			provider.GetRequiredService<IClipboardService>()));
 		services.AddSingleton<MainWindowViewModel>();
 		services.AddSingleton<MainWindow>();
 
