@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections;
 using System.Linq;
-using Microsoft.UI.Xaml.Input;
 
 namespace App2.Views;
 
