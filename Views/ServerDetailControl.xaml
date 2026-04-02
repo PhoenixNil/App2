@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <UserControl x:Class="App2.Views.ServerDetailControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="&#x670D;&#x52A1;&#x5668;&#x8BE6;&#x60C5;"
+                   Text="服务器详情"
                    FontSize="20"
                    FontWeight="SemiBold"
                    Margin="0,0,0,16" />
@@ -58,7 +58,7 @@
                                             VerticalAlignment="Center"
                                             Spacing="8">
                                     <SymbolIcon Symbol="Contact" />
-                                    <TextBlock Text="&#x540D;&#x79F0;"
+                                    <TextBlock Text="名称"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="0"
@@ -76,7 +76,7 @@
                                             Spacing="8">
                                     <FontIcon Foreground="{ThemeResource AccentAcrylicBackgroundFillColorDefaultBrush}"
                                               Glyph="&#xE774;" />
-                                    <TextBlock Text="&#x5730;&#x5740;"
+                                    <TextBlock Text="地址"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="1"
@@ -90,7 +90,7 @@
                                             Grid.Column="0"
                                             Spacing="8">
                                     <FontIcon Foreground="#73d3ff" Glyph="&#xE95F;" />
-                                    <TextBlock Text="&#x7AEF;&#x53E3;"
+                                    <TextBlock Text="端口"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="2"
@@ -103,7 +103,7 @@
                                             Grid.Column="0"
                                             Spacing="8">
                                     <FontIcon Foreground="#ffb347" Glyph="&#xE8D7;" />
-                                    <TextBlock Text="&#x52A0;&#x5BC6;"
+                                    <TextBlock Text="加密"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="3"
@@ -112,17 +112,17 @@
                                            FontSize="16" />
                             </Grid>
 
-                            <controls:CopyButton HorizontalAlignment="Right"
+                            <controls:CopyButton x:Name="ShareCopyButton"
+                                                 HorizontalAlignment="Right"
                                                  VerticalAlignment="Top"
                                                  Padding="7,6,7,6"
                                                  MinWidth="32"
                                                  MinHeight="32"
                                                  Content="&#xE8C8;"
+                                                 AutomationProperties.Name="复制SS分享链接"
+                                                 ToolTipService.ToolTip="复制SS分享链接"
                                                  TextToCopy="{x:Bind ViewModel.SelectedSsLink, Mode=OneWay}"
-                                                 CopiedMessage="SS &#x94FE;&#x63A5;&#x5DF2;&#x590D;&#x5236;"
-                                                 Click="ShareCopyButton_Click"
-                                                 AutomationProperties.Name="&#x590D;&#x5236; SS &#x94FE;&#x63A5;"
-                                                 ToolTipService.ToolTip="&#x590D;&#x5236; SS &#x94FE;&#x63A5;" />
+                                                 Click="ShareCopyButton_Click" />
                         </Grid>
 
                         <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
@@ -138,7 +138,7 @@
                                     <FontIcon Glyph="&#xE9D9;"
                                               Foreground="#A67CA8"
                                               VerticalAlignment="Center" />
-                                    <TextBlock Text="&#x7F51;&#x7EDC;&#x5EF6;&#x8FDF;"
+                                    <TextBlock Text="网络延迟"
                                                FontSize="13"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                VerticalAlignment="Center" />
@@ -157,7 +157,7 @@
                                         Background="Transparent"
                                         BorderBrush="Transparent"
                                         Padding="8"
-                                        ToolTipService.ToolTip="&#x91CD;&#x65B0;&#x6D4B;&#x8BD5;&#x5EF6;&#x8FDF;"
+                                        ToolTipService.ToolTip="重新测试延迟"
                                         VerticalAlignment="Center">
                                     <FontIcon Glyph="&#xE72C;"
                                               FontSize="14" />

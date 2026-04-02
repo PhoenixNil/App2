@@ -1,10 +1,8 @@
 using App2.Services;
 using App2.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Windows.AppNotifications;
 using Microsoft.UI.Xaml;
 using System;
-using System.Diagnostics;
 using System.Linq;
 
 namespace App2;
@@ -16,7 +14,6 @@ public partial class App : Application
 	public App()
 	{
 		InitializeComponent();
-		InitializeAppNotifications();
 		Services = ConfigureServices();
 	}
 
@@ -39,21 +36,6 @@ public partial class App : Application
 		}
 
 		_window.Activate();
-	}
-
-	private static void InitializeAppNotifications()
-	{
-		try
-		{
-			if (AppNotificationManager.IsSupported())
-			{
-				AppNotificationManager.Default.Register();
-			}
-		}
-		catch (Exception ex)
-		{
-			Debug.WriteLine($"Failed to register app notifications: {ex.Message}");
-		}
 	}
 
 	private static IServiceProvider ConfigureServices()
