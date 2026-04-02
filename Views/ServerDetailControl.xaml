@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="服务器详情"
+                   Text="&#x670D;&#x52A1;&#x5668;&#x8BE6;&#x60C5;"
                    FontSize="20"
                    FontWeight="SemiBold"
                    Margin="0,0,0,16" />
@@ -58,7 +58,7 @@
                                             VerticalAlignment="Center"
                                             Spacing="8">
                                     <SymbolIcon Symbol="Contact" />
-                                    <TextBlock Text="名称"
+                                    <TextBlock Text="&#x540D;&#x79F0;"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="0"
@@ -76,7 +76,7 @@
                                             Spacing="8">
                                     <FontIcon Foreground="{ThemeResource AccentAcrylicBackgroundFillColorDefaultBrush}"
                                               Glyph="&#xE774;" />
-                                    <TextBlock Text="地址"
+                                    <TextBlock Text="&#x5730;&#x5740;"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="1"
@@ -90,7 +90,7 @@
                                             Grid.Column="0"
                                             Spacing="8">
                                     <FontIcon Foreground="#73d3ff" Glyph="&#xE95F;" />
-                                    <TextBlock Text="端口"
+                                    <TextBlock Text="&#x7AEF;&#x53E3;"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="2"
@@ -103,7 +103,7 @@
                                             Grid.Column="0"
                                             Spacing="8">
                                     <FontIcon Foreground="#ffb347" Glyph="&#xE8D7;" />
-                                    <TextBlock Text="加密"
+                                    <TextBlock Text="&#x52A0;&#x5BC6;"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                                 <TextBlock Grid.Row="3"
@@ -112,62 +112,17 @@
                                            FontSize="16" />
                             </Grid>
 
-                            <Button HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    Padding="4"
-                                    MinWidth="0"
-                                    MinHeight="0">
-                                <FontIcon Glyph="&#xE72D;" FontSize="14" />
-                                <Button.Flyout>
-                                    <Flyout Placement="BottomEdgeAlignedRight">
-                                        <StackPanel Width="300" Spacing="14">
-                                            <Grid ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-
-                                                <StackPanel Orientation="Horizontal"
-                                                            Spacing="8"
-                                                            VerticalAlignment="Center">
-                                                    <FontIcon Glyph="&#xE72D;"
-                                                              FontSize="15"
-                                                              Foreground="{ThemeResource AccentFillColorDefaultBrush}" />
-                                                    <TextBlock Text="SS 分享链接"
-                                                               FontWeight="SemiBold" FontSize="15" />
-                                                </StackPanel>
-
-                                                <controls:CopyButton Grid.Column="1"
-                                                                     Width="32"
-                                                                     Height="32"
-                                                                     Padding="7,6,7,6"
-                                                                     Content="&#xE8C8;"
-                                                                     TextToCopy="{x:Bind ViewModel.SelectedSsLink, Mode=OneWay}"
-                                                                     CopiedMessage="已复制链接"
-                                                                     AutomationProperties.Name="复制链接"
-                                                                     ToolTipService.ToolTip="复制链接" />
-                                            </Grid>
-                                            
-
-                                            <Border Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                                                    BorderThickness="1"
-                                                    CornerRadius="10"
-                                                    Padding="12">
-                                                    <TextBlock Text="{x:Bind ViewModel.SelectedSsLink, Mode=OneWay}"
-                                                               FontFamily="Consolas"
-                                                               FontSize="12"
-                                                               LineHeight="10"
-                                                               TextWrapping="Wrap"
-                                                               IsTextSelectionEnabled="True"
-                                                               Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                                            </Border>
-                                        </StackPanel>
-                                    </Flyout>
-                                </Button.Flyout>
-                            </Button>
+                            <controls:CopyButton HorizontalAlignment="Right"
+                                                 VerticalAlignment="Top"
+                                                 Padding="7,6,7,6"
+                                                 MinWidth="32"
+                                                 MinHeight="32"
+                                                 Content="&#xE8C8;"
+                                                 TextToCopy="{x:Bind ViewModel.SelectedSsLink, Mode=OneWay}"
+                                                 CopiedMessage="SS &#x94FE;&#x63A5;&#x5DF2;&#x590D;&#x5236;"
+                                                 Click="ShareCopyButton_Click"
+                                                 AutomationProperties.Name="&#x590D;&#x5236; SS &#x94FE;&#x63A5;"
+                                                 ToolTipService.ToolTip="&#x590D;&#x5236; SS &#x94FE;&#x63A5;" />
                         </Grid>
 
                         <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
@@ -183,7 +138,7 @@
                                     <FontIcon Glyph="&#xE9D9;"
                                               Foreground="#A67CA8"
                                               VerticalAlignment="Center" />
-                                    <TextBlock Text="网络延迟"
+                                    <TextBlock Text="&#x7F51;&#x7EDC;&#x5EF6;&#x8FDF;"
                                                FontSize="13"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                VerticalAlignment="Center" />
@@ -202,7 +157,7 @@
                                         Background="Transparent"
                                         BorderBrush="Transparent"
                                         Padding="8"
-                                        ToolTipService.ToolTip="重新测试延迟"
+                                        ToolTipService.ToolTip="&#x91CD;&#x65B0;&#x6D4B;&#x8BD5;&#x5EF6;&#x8FDF;"
                                         VerticalAlignment="Center">
                                     <FontIcon Glyph="&#xE72C;"
                                               FontSize="14" />
