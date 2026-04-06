@@ -43,10 +43,17 @@ public sealed partial class CopyButton : Button
     {
         if (!string.IsNullOrWhiteSpace(TextToCopy))
         {
-            var package = new DataPackage();
-            package.SetText(TextToCopy);
-            Clipboard.SetContent(package);
-            Clipboard.Flush();
+            try
+            {
+                var package = new DataPackage();
+                package.SetText(TextToCopy);
+                Clipboard.SetContent(package);
+                Clipboard.Flush();
+            }
+            catch (Exception)
+            {
+                return;
+            }
         }
 
         if (GetTemplateChild("CopyToClipboardSuccessAnimation") is Storyboard storyBoard)
