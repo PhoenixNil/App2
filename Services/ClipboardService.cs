@@ -9,9 +9,16 @@ public class ClipboardService : IClipboardService
 {
 	public void SetText(string text)
 	{
-		var package = new DataPackage();
-		package.SetText(text);
-		Clipboard.SetContent(package);
-		Clipboard.Flush();
+		try
+		{
+			var package = new DataPackage();
+			package.SetText(text);
+			Clipboard.SetContent(package);
+			Clipboard.Flush();
+		}
+		catch (Exception)
+		{
+			// 剪贴板被占用或不可用时静默处理，避免崩溃
+		}
 	}
 }
