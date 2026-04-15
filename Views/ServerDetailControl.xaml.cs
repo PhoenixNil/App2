@@ -1,4 +1,4 @@
-using App2.Controls;
+﻿using App2.Controls;
 using App2.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -18,6 +18,7 @@ public sealed partial class ServerDetailControl : UserControl
 		get => (ServerDetailViewModel?)GetValue(ViewModelProperty);
 		set => SetValue(ViewModelProperty, value);
 	}
+
 
 	public static readonly DependencyProperty ViewModelProperty =
 		DependencyProperty.Register(nameof(ViewModel), typeof(ServerDetailViewModel), typeof(ServerDetailControl), new PropertyMetadata(null));

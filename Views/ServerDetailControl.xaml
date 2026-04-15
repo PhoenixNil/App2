@@ -20,48 +20,43 @@
                    FontSize="20"
                    FontWeight="SemiBold"
                    Margin="0,0,0,16" />
-
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Margin="0,0,0,12">
-            <StackPanel Orientation="Vertical"
+        <StackPanel Orientation="Vertical"
                         Spacing="8"
-                        Padding="0,0,12,80">
-
-                <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                        Padding="0,0,12,80"
+                    Grid.Row="1">
+            <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
                         BorderThickness="1"
-                        CornerRadius="16"
+                        CornerRadius="{ThemeResource OverlayCornerRadius}"
                         Padding="20">
-                    <StackPanel Orientation="Vertical"
+                <StackPanel Orientation="Vertical"
                                 Spacing="12">
 
-                        <Grid>
-                            <Grid x:Name="InfoGrid"
+                    <Grid>
+                        <Grid x:Name="InfoGrid"
                                   ColumnSpacing="12"
                                   RowSpacing="10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                                <StackPanel Orientation="Horizontal"
+                            <StackPanel Orientation="Horizontal"
                                             Grid.Row="0"
                                             Grid.Column="0"
                                             VerticalAlignment="Center"
                                             Spacing="8">
-                                    <SymbolIcon Symbol="Contact" />
-                                    <TextBlock Text="名称"
+                                <SymbolIcon Symbol="Contact" />
+                                <TextBlock Text="名称"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </StackPanel>
-                                <TextBlock Grid.Row="0"
+                            </StackPanel>
+                            <TextBlock Grid.Row="0"
                                            Grid.Column="1"
                                            Text="{x:Bind ViewModel.SelectedName, Mode=OneWay}"
                                            FontSize="16"
@@ -70,49 +65,49 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,32,0" />
 
-                                <StackPanel Orientation="Horizontal"
+                            <StackPanel Orientation="Horizontal"
                                             Grid.Row="1"
                                             Grid.Column="0"
                                             Spacing="8">
-                                    <FontIcon Foreground="{ThemeResource AccentAcrylicBackgroundFillColorDefaultBrush}"
+                                <FontIcon Foreground="{ThemeResource AccentAcrylicBackgroundFillColorDefaultBrush}"
                                               Glyph="&#xE774;" />
-                                    <TextBlock Text="地址"
+                                <TextBlock Text="地址"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </StackPanel>
-                                <TextBlock Grid.Row="1"
+                            </StackPanel>
+                            <TextBlock Grid.Row="1"
                                            Grid.Column="1"
                                            Text="{x:Bind ViewModel.SelectedHost, Mode=OneWay}"
                                            FontSize="16"
                                            TextWrapping="WrapWholeWords" />
 
-                                <StackPanel Orientation="Horizontal"
+                            <StackPanel Orientation="Horizontal"
                                             Grid.Row="2"
                                             Grid.Column="0"
                                             Spacing="8">
-                                    <FontIcon Foreground="#73d3ff" Glyph="&#xE95F;" />
-                                    <TextBlock Text="端口"
+                                <FontIcon Foreground="#73d3ff" Glyph="&#xE95F;" />
+                                <TextBlock Text="端口"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </StackPanel>
-                                <TextBlock Grid.Row="2"
+                            </StackPanel>
+                            <TextBlock Grid.Row="2"
                                            Grid.Column="1"
                                            Text="{x:Bind ViewModel.SelectedPort, Mode=OneWay}"
                                            FontSize="16" />
 
-                                <StackPanel Orientation="Horizontal"
+                            <StackPanel Orientation="Horizontal"
                                             Grid.Row="3"
                                             Grid.Column="0"
                                             Spacing="8">
-                                    <FontIcon Foreground="#ffb347" Glyph="&#xE8D7;" />
-                                    <TextBlock Text="加密"
+                                <FontIcon Foreground="#ffb347" Glyph="&#xE8D7;" />
+                                <TextBlock Text="加密"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </StackPanel>
-                                <TextBlock Grid.Row="3"
+                            </StackPanel>
+                            <TextBlock Grid.Row="3"
                                            Grid.Column="1"
                                            Text="{x:Bind ViewModel.SelectedMethod, Mode=OneWay}"
                                            FontSize="16" />
-                            </Grid>
+                        </Grid>
 
-                            <controls:CopyButton x:Name="ShareCopyButton"
+                        <controls:CopyButton x:Name="ShareCopyButton"
                                                  HorizontalAlignment="Right"
                                                  VerticalAlignment="Top"
                                                  Padding="7,6,7,6"
@@ -123,28 +118,28 @@
                                                  ToolTipService.ToolTip="复制SS分享链接"
                                                  TextToCopy="{x:Bind ViewModel.SelectedSsLink, Mode=OneWay}"
                                                  Click="ShareCopyButton_Click" />
-                        </Grid>
+                    </Grid>
 
-                        <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 CornerRadius="12"
                                 Padding="16">
-                            <Grid ColumnDefinitions="*,Auto,Auto"
+                        <Grid ColumnDefinitions="*,Auto,Auto"
                                   ColumnSpacing="12"
                                   VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal"
+                            <StackPanel Orientation="Horizontal"
                                             Spacing="6">
-                                    <FontIcon Glyph="&#xE9D9;"
+                                <FontIcon Glyph="&#xE9D9;"
                                               Foreground="#A67CA8"
                                               VerticalAlignment="Center" />
-                                    <TextBlock Text="网络延迟"
+                                <TextBlock Text="网络延迟"
                                                FontSize="13"
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                VerticalAlignment="Center" />
-                                </StackPanel>
+                            </StackPanel>
 
-                                <TextBlock Grid.Column="1"
+                            <TextBlock Grid.Column="1"
                                            Text="{x:Bind ViewModel.LatencyText, Mode=OneWay}"
                                            Foreground="{x:Bind ViewModel.LatencyColor, Mode=OneWay, Converter={StaticResource ColorToBrushConverter}}"
                                            FontSize="20"
@@ -152,23 +147,22 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,8,0" />
 
-                                <Button Grid.Column="2"
+                            <Button Grid.Column="2"
                                         Command="{x:Bind ViewModel.TestLatencyCommand}"
                                         Background="Transparent"
                                         BorderBrush="Transparent"
                                         Padding="8"
                                         ToolTipService.ToolTip="重新测试延迟"
                                         VerticalAlignment="Center">
-                                    <FontIcon Glyph="&#xE72C;"
+                                <FontIcon Glyph="&#xE72C;"
                                               FontSize="14" />
-                                </Button>
-                            </Grid>
-                        </Border>
+                            </Button>
+                        </Grid>
+                    </Border>
 
-                    </StackPanel>
-                </Border>
+                </StackPanel>
+            </Border>
 
-            </StackPanel>
-        </ScrollViewer>
+        </StackPanel>
     </Grid>
 </UserControl>
